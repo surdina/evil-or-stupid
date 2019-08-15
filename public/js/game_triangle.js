@@ -50,10 +50,10 @@ function create() {
 //    graphics.strokeRectShape(rect);
     
     // create outer walls
-    make_wall(0, 0, 'h', this.physics.world.width);
-    make_wall(0, this.physics.world.height - 10, 'h', this.physics.world.width);
-    make_wall(0, 0, 'v', this.physics.world.height);
-    make_wall(this.physics.world.width - 10, 0, 'v', this.physics.world.height);
+//    make_wall(0, 0, 'h', this.physics.world.width);
+//    make_wall(0, this.physics.world.height - 10, 'h', this.physics.world.width);
+//    make_wall(0, 0, 'v', this.physics.world.height);
+//    make_wall(this.physics.world.width - 10, 0, 'v', this.physics.world.height);
 
 
 
@@ -120,19 +120,19 @@ function create() {
         }, null, self);
     });
     
-    this.socket.on('createWalls', function (createWalls) {
+/*    this.socket.on('createWalls', function (self, createWalls) {
         // create outer walls
-        make_wall(0, 0, 'h', this.physics.world.width);
-        make_wall(0, this.physics.world.height - 10, 'h', this.physics.world.width);
-        make_wall(0, 0, 'v', this.physics.world.height);
-        make_wall(this.physics.world.width - 10, 0, 'v', this.physics.world.height);
+        make_wall(0, 0, 'h', self.physics.world.width);
+        make_wall(0, self.physics.world.height - 10, 'h', self.physics.world.width);
+        make_wall(0, 0, 'v', self.physics.world.height);
+        make_wall(self.physics.world.width - 10, 0, 'v', self.physics.world.height);
         // create separation between players
-        make_wall(0, this.physics.world.height / 2, 'h', this.physics.world.width);
+        make_wall(0, self.physics.world.height / 2, 'h', self.physics.world.width);
         walls.enableBody = true;
-        this.physics.arcade.collide(this.ship, this.walls);
-        this.physics.world.setBounds(0, 0, 800, 600);
+        self.physics.arcade.collide(self.ship, self.walls);
+        self.physics.world.setBounds(0, 0, 800, 600);
     });
-        
+        */
         
         
         
@@ -208,19 +208,19 @@ function addOtherPlayers(self, playerInfo) {
     self.otherPlayers.add(otherPlayer);
 }
 
-function make_wall(self, x, y, orientation, length) {
-    var wall;
-    if (orientation === 'h') {
-        wall = this.walls.create(x, y, 'hwall');
-        wall.width = length;
-        wall.height = 10;
-    } else if (orientation === 'v') {
-        wall = this.walls.create(x, y, 'vwall');
-        wall.width = 10;
-        wall.height = length;
-    }
-
-//    this.walls.body.immovable = true;
-//    wall.body.moves = false;
-//    wall.body.allowGravity = false;
-}
+//function make_wall(self, x, y, orientation, length) {
+//    var wall;
+//    if (orientation === 'h') {
+//        wall = this.walls.create(x, y, 'hwall');
+//        wall.width = length;
+//        wall.height = 10;
+//    } else if (orientation === 'v') {
+//        wall = this.walls.create(x, y, 'vwall');
+//        wall.width = 10;
+//        wall.height = length;
+//    }
+//
+////    this.walls.body.immovable = true;
+////    wall.body.moves = false;
+////    wall.body.allowGravity = false;
+//}
