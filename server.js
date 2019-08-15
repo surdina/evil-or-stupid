@@ -1,9 +1,6 @@
 var express = require('express');
 var app = express();
-// var server = require('http').Server(app);
-var server = http.createServer(app).listen(app.get('port'), function(){
-  console.log("Express server listening on port " + app.get('port'));
-});
+var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 var players = {};
 var star = {
