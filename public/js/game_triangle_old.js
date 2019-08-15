@@ -70,8 +70,10 @@ function create() {
     // enable physics for them
     dots1.enableBody = true;
 
-    dots1.create(30, game.world.height - 100, 'purple_dot');
+    //dots1.create(30, game.world.height - 100, 'purple_dot');
+    dots1.create(30, 500, 'purple_dot');
 
+    
     cursors = game.input.keyboard.createCursorKeys();
 
     // add temporary walls and turn on physics
@@ -122,8 +124,11 @@ function update() {
         update_angle(player, angle);
     } else {
       // slow down player (friction)
-        player.body.velocity.x *= 0.99;
-        player.body.velocity.y *= 0.99;
+       // player.body.velocity.x *= 0.99;
+        // player.body.velocity.y *= 0.99;
+        player.body.acceleration.x = 0;
+        player.body.acceleration.y = 0;
+        update_angle(player, angle);
     }
 }
 
