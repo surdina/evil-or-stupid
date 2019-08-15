@@ -7,10 +7,12 @@ var star = {
     x: Math.floor(Math.random() * 700) + 50,
     y: Math.floor(Math.random() * 500) + 50
 };
+var walls = {};
 var scores = {
     blue: 0,
     red: 0
 };
+
 
 app.use(express.static(__dirname + '/public'));
 
@@ -34,8 +36,11 @@ io.on('connection', function (socket) {
     socket.emit('starLocation', star);
     // send current scores to new player
     socket.emit('scoreUpdate', scores);
+    // create walls     
+    socket.emit('createWalls', walls);
     // update all other players of the new player
     socket.broadcast.emit('newPlayer', players[socket.id]);
+    console.log("socket.id: " + socket.id);
 
     socket.on('disconnect', function() {
         console.log('user disconnected');
