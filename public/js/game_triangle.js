@@ -27,18 +27,18 @@ var game = new Phaser.Game(config);
 
 function preload() {
 //    this.load.image('ship', 'assets/spaceShips_001.png');
-    this.load.image('otherPlayer', 'assets/enemyBlack5.png');
+    this.load.image('otherPlayer', '/assets/enemyBlack5.png');
 //    this.load.image('star', 'assets/star_gold.png');
     
-    this.load.image('background', 'graphics/background2.png');
-    this.load.image('ground', 'graphics/ground.png');
-    this.load.image('ship', 'graphics/triangle_grey.png');
-    this.load.image('vwall', 'graphics/vwall.png');
-    this.load.image('hwall', 'graphics/hwall.png');
-    this.load.image('orange_dot', 'graphics/orange_dot.png');
-    this.load.image('purple_dot', 'graphics/purple_dot.png');
-    this.load.image('purple_block', 'graphics/purple_block.png');
-    this.load.image('exit', 'graphics/exit2.png');
+    this.load.image('background', '/graphics/background2.png');
+    this.load.image('ground', '/graphics/ground.png');
+    this.load.image('ship', '/graphics/triangle_grey.png');
+    this.load.image('vwall', '/graphics/vwall.png');
+    this.load.image('hwall', '/graphics/hwall.png');
+    this.load.image('orange_dot', '/graphics/orange_dot.png');
+    this.load.image('purple_dot', '/graphics/purple_dot.png');
+    this.load.image('purple_block', '/graphics/purple_block.png');
+    this.load.image('exit', '/graphics/exit2.png');
 }
 
 function create() {
@@ -58,6 +58,9 @@ function create() {
 
 
     
+    // this.socket = io.connect('/', {
+    //     path: "/evil-or-stupid"
+    // });
     this.socket = io();
     this.otherPlayers = this.physics.add.group();
     //var walls;

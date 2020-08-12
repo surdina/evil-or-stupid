@@ -1,13 +1,30 @@
-/*var express = require('express');
-var app = express();
-var server = require('http').Server(app);
-var io = require('socket.io')(server);*/
+
+// var express = require('express');
+// var app     = express();
+// var server  = require('http').Server(app);
+// var io      = require('socket.io').listen(server);
+
 
 var express = require('express');
+var app     = express();
+var server  = app.listen(1337);
+var io      = require('socket.io').listen(server);
+
+
+
+// var io      = require('socket.io')(server);
+
+// var io = require('socket.io')(server, {path: '../socket.io/'});
+
+var port = 1337; 
+
+
+
+/*var express = require('express');
 var http = require('https');
 var app = express();
 var server = http.createServer(app);
-var io = require('socket.io')(server);
+var io = require('socket.io')(server);*/
 
 
 var players = {};
@@ -22,11 +39,10 @@ var scores = {
 };
 
 
+// app.use(express.static(__dirname));
 app.use(express.static(__dirname + '/public'));
 
-app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/index.html');
-});
+
 
 io.on('connection', function (socket) {
     console.log('a user connected');
@@ -80,6 +96,23 @@ io.on('connection', function (socket) {
     });
 });
 
-server.listen(8081, function() {
-    console.log(`Listening on ${server.address().port}`);
+
+
+// server.listen('1337', function() {
+//     console.log(`Listening on ${server.address().port}`);
+// });
+
+//response with index file
+
+// app.get('/', function (req, res) {
+//    //res.sendFile( __dirname + "/public/" + "index.html" );
+//    res.sendFile('/public/', {root: __dirname});
+// })
+
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
 });
+// app.listen(port, () => {
+//     console.log("Now listening on port " + port);
+// });
