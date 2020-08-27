@@ -34,7 +34,7 @@ var star = {
 };
 var walls = {};
 var scores = {
-    blue: 0,
+    green: 0,
     red: 0
 };
 
@@ -52,7 +52,7 @@ io.on('connection', function (socket) {
         x: Math.floor(Math.random() * 700) + 50,
         y: Math.floor(Math.random() * 500) + 50,
         playerId: socket.id,
-        team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue'
+        team: 'green'
     };
     // send players object to new player
     socket.emit('currentPlayers', players);
@@ -87,7 +87,7 @@ io.on('connection', function (socket) {
         if (players[socket.id].team === 'red') {
             scores.red += 10;
         } else {
-            scores.blue += 10;
+            scores.green += 10;
         }
         star.x = Math.floor(Math.random() * 700) + 50;
         star.y = Math.floor(Math.random() * 500) + 50;

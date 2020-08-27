@@ -101,12 +101,12 @@ function create() {
     
     this.cursors = this.input.keyboard.createCursorKeys();
     
-    this.blueScoreText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#0000FF' });
+    this.greenScoreText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#1fc888' });
     this.redScoreText = this.add.text(584, 16, '', { fontSize: '32px', fill: '#FF0000' });
     
     this.socket.on('scoreUpdate', function (scores) {
-        self.blueScoreText.setText('Blue: ' + scores.blue);
-        self.redScoreText.setText('Red: ' + scores.red);
+        self.greenScoreText.setText('You: ' + scores.green);
+        self.redScoreText.setText('Other: ' + scores.red);
     });
     
    
@@ -199,7 +199,7 @@ function addPlayer(self, playerInfo) {
 
 function addOtherPlayers(self, playerInfo) {
     const otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(36, 42);
-//    if (playerInfo.team === 'blue') {
+//    if (playerInfo.team === 'green') {
 //        otherPlayer.setTint(0x0000ff);
 //    } else {
 //        otherPlayer.setTint(0xff0000);
