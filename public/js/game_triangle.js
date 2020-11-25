@@ -26,10 +26,7 @@ var config = {
 var game = new Phaser.Game(config);
 
 function preload() {
-//    this.load.image('ship', 'assets/spaceShips_001.png');
     this.load.image('otherPlayer', '/assets/enemyBlack5.png');
-//    this.load.image('star', 'assets/star_gold.png');
-    
     this.load.image('background', '/graphics/background2.png');
     this.load.image('ground', '/graphics/ground.png');
     this.load.image('ship', '/graphics/triangle_grey.png');
@@ -39,6 +36,8 @@ function preload() {
     this.load.image('purple_dot', '/graphics/purple_dot.png');
     this.load.image('purple_block', '/graphics/purple_block.png');
     this.load.image('exit', '/graphics/exit2.png');
+    this.load.image('trap', 'graphics/trap_large.png');
+
 }
 
 function create() {
@@ -65,6 +64,8 @@ function create() {
     this.otherPlayers = this.physics.add.group();
     //var walls;
     this.walls = this.physics.add.group();
+    this.traps = this.physics.add.group();
+
     
     
 
@@ -122,7 +123,16 @@ function create() {
             this.socket.emit('starCollected');
         }, null, self);
     });
+
+    this.socket.on('trapLocation', function(trapLocation) {
+        if (self.trap) self.trap.destroy();
+        self.trap = self.physics.add.image(trapLocation.x, trapLocation.y, 'trap');
+        self.physics.add.overlap(self.ship, self.star, function () {
+            this.socket.emit('trapCollected');
+        }, null, self);
+    });
     
+
 /*    this.socket.on('createWalls', function (self, createWalls) {
         // create outer walls
         make_wall(0, 0, 'h', self.physics.world.width);
@@ -190,7 +200,7 @@ function addPlayer(self, playerInfo) {
     self.ship.setCollideWorldBounds(true);
     //self.ship.setCollideWorldBounds=true;
     //self.ship.onWorldBounds=true;
-    // own ship: greem
+    // own ship: green
     self.ship.setTint(0x00ffaa);
     self.ship.setDrag(50);
     self.ship.setAngularDrag(50);
@@ -222,6 +232,13 @@ function addOtherPlayers(self, playerInfo) {
 //        wall.width = 10;
 //        wall.height = length;
 //    }
+
+function make_trap(self, x, y) {
+    var trap;
+    trap = this.traps.create(x, y);
+    trap.height = 100;
+    trap.width = 100;
+}
 //
 ////    this.walls.body.immovable = true;
 ////    wall.body.moves = false;

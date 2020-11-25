@@ -14,6 +14,7 @@ function preload() {
     game.load.image('purple_dot', 'graphics/purple_dot.png');
     game.load.image('purple_block', 'graphics/purple_block.png');
     game.load.image('exit', 'graphics/exit2.png');
+    game.load.image('trap', 'graphics/trap.png');
 
 }
 

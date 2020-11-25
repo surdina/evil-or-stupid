@@ -32,6 +32,10 @@ var star = {
     x: Math.floor(Math.random() * 700) + 50,
     y: Math.floor(Math.random() * 500) + 50
 };
+var trap = {
+    x: Math.floor(Math.random() * 700) + 50,
+    y: Math.floor(Math.random() * 500) + 50
+};
 var walls = {};
 var scores = {
     green: 0,
@@ -58,6 +62,8 @@ io.on('connection', function (socket) {
     socket.emit('currentPlayers', players);
     // send star object to new player
     socket.emit('starLocation', star);
+    // send trap object to new player
+    socket.emit('trapLocation', trap);
     // send current scores to new player
     socket.emit('scoreUpdate', scores);
     // create walls     
@@ -94,6 +100,19 @@ io.on('connection', function (socket) {
         io.emit('starLocation', star);
         io.emit('scoreUpdate', scores);
     });
+
+    socket.on('trapCollected', function () {
+        // if (players[socket.id].team === 'red') {
+        //     scores.red += 10;
+        // } else {
+        //     scores.green += 10;
+        // }
+        star.x = Math.floor(Math.random() * 700) + 50;
+        star.y = Math.floor(Math.random() * 500) + 50;
+        io.emit('starLocation', star);
+        // io.emit('scoreUpdate', scores);
+    });
+
 });
 
 
