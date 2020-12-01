@@ -7,9 +7,20 @@
 
 var express = require('express');
 var app     = express();
-var server  = app.listen(8081);
+var server = require('http').Server(app);
 var io      = require('socket.io').listen(server);
 
+
+
+app.use(express.static(__dirname + '/public'));
+ 
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/index.html');
+});
+ 
+server.listen(8081, function () {
+  console.log(`Listening on ${server.address().port}`);
+});
 // var express = require('express');
 // var app     = express();
 // var server  = require('http').Server(app);
@@ -121,15 +132,5 @@ io.on('connection', function (socket) {
         // io.emit('scoreUpdate', scores);
     });
 
-});
-
-
-
-app.use(express.static(__dirname + '/public'));
-
-//response with index file
-
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
 });
 
