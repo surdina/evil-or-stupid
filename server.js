@@ -51,7 +51,8 @@ var scores = {
 
 
 // app.use(express.static(__dirname));
-app.use(express.static(__dirname + '/public'));
+// app.use(express.static(__dirname + '/public/'));
+app.use(express.static('public'));
 
 
 
