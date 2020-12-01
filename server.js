@@ -5,25 +5,25 @@
 // var io      = require('socket.io').listen(server);
 
 
-// var express = require('express');
-// var app     = express();
-// var server  = app.listen(8081);
-// var io      = require('socket.io').listen(server);
-
 var express = require('express');
 var app     = express();
-var server  = require('http').Server(app);
+var server  = app.listen(8081);
 var io      = require('socket.io').listen(server);
+
+// var express = require('express');
+// var app     = express();
+// var server  = require('http').Server(app);
+// var io      = require('socket.io').listen(server);
 
 // var io      = require('socket.io')(server);
 
 // var io = require('socket.io')(server, {path: '../socket.io/'});
 
 var port = 8081; 
-app.use('/', express.static(__dirname + '/public'));
-app.use('/js', express.static(__dirname + '/public/js'));
 
-
+// server.listen(port, function() {
+//     console.log(`Listening on ${server.address().port}`);
+// });
 
 
 
@@ -125,24 +125,13 @@ io.on('connection', function (socket) {
 
 
 
-// server.listen('8081', function() {
-//     console.log(`Listening on ${server.address().port}`);
-// });
+app.use('/', express.static(__dirname + '/public'));
+app.use('/js', express.static(__dirname + '/public/js'));
+
 
 //response with index file
-
-// app.get('/', function (req, res) {
-//    //res.sendFile( __dirname + "/public/" + "index.html" );
-//    res.sendFile('/public/', {root: __dirname});
-// })
-
-
-
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
-server.listen(port, function() {
-    console.log(`Listening on ${server.address().port}`);
-});
