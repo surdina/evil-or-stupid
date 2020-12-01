@@ -16,7 +16,7 @@ var io      = require('socket.io').listen(server);
 app.use(config.baseUrl, express.static(__dirname + '/public'));
 
 app.get(config.baseUrl, function (req, res) {
-  res.sendFile(__dirname + '/index.html');
+  res.sendFile(__dirname + '/public/index.html');
 });
  
 server.listen(8081, function () {
