@@ -3,6 +3,7 @@
 // var app     = express();
 // var server  = require('http').Server(app);
 // var io      = require('socket.io').listen(server);
+const config = require('./config.js');
 
 
 var express = require('express');
@@ -12,9 +13,9 @@ var io      = require('socket.io').listen(server);
 
 
 
-app.use(express.static(__dirname + '/public'));
- 
-app.get('/', function (req, res) {
+app.use(config.baseUrl, express.static(__dirname + '/public'));
+
+app.get(config.baseUrl, function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
  
