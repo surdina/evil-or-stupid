@@ -5,18 +5,25 @@
 // var io      = require('socket.io').listen(server);
 
 
+// var express = require('express');
+// var app     = express();
+// var server  = app.listen(1337);
+// var io      = require('socket.io').listen(server);
+
 var express = require('express');
 var app     = express();
-var server  = app.listen(1337);
+var server  = require('http').Server(app);
 var io      = require('socket.io').listen(server);
-
-
 
 // var io      = require('socket.io')(server);
 
 // var io = require('socket.io')(server, {path: '../socket.io/'});
 
 var port = 1337; 
+server.listen(port, function() {
+    console.log(`Listening on ${server.address().port}`);
+});
+
 
 
 
