@@ -135,9 +135,9 @@ io.on('connection', function (socket) {
 //    res.sendFile('/public/', {root: __dirname});
 // })
 
-app.use('/', express.static(__dirname + '/public'));
+app.use('/game', express.static(__dirname + '/public'));
 
-app.get('/', (req, res) => {
+app.get('/game', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 // app.listen(port, () => {
