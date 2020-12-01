@@ -52,7 +52,6 @@ var scores = {
 
 // app.use(express.static(__dirname));
 // app.use(express.static(__dirname + '/public/'));
-app.use(express.static('public'));
 
 
 
@@ -136,6 +135,7 @@ io.on('connection', function (socket) {
 //    res.sendFile('/public/', {root: __dirname});
 // })
 
+app.use('/', express.static('public'));
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
