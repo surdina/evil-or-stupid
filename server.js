@@ -7,7 +7,7 @@
 
 // var express = require('express');
 // var app     = express();
-// var server  = app.listen(1337);
+// var server  = app.listen(8081);
 // var io      = require('socket.io').listen(server);
 
 var express = require('express');
@@ -19,7 +19,7 @@ var io      = require('socket.io').listen(server);
 
 // var io = require('socket.io')(server, {path: '../socket.io/'});
 
-var port = 1337; 
+var port = 8081; 
 server.listen(port, function() {
     console.log(`Listening on ${server.address().port}`);
 });
@@ -124,7 +124,7 @@ io.on('connection', function (socket) {
 
 
 
-// server.listen('1337', function() {
+// server.listen('8081', function() {
 //     console.log(`Listening on ${server.address().port}`);
 // });
 
