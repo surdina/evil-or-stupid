@@ -8,14 +8,12 @@ const config = require('./config.js');
 
 var express = require('express');
 var app     = express();
-var server = require('http').Server(app);
+var server  = require('http').Server(app);
 var io      = require('socket.io').listen(server);
 
+app.use("/", express.static(__dirname + '/public'));
 
-
-app.use(config.baseUrl, express.static(__dirname + '/public'));
-
-app.get(config.baseUrl, function (req, res) {
+app.get("/", function (req, res) {
   res.sendFile(__dirname + '/public/index.html');
 });
  
@@ -36,8 +34,6 @@ var port = 8081;
 // server.listen(port, function() {
 //     console.log(`Listening on ${server.address().port}`);
 // });
-
-
 
 
 /*var express = require('express');
