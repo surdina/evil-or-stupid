@@ -20,9 +20,10 @@ var io      = require('socket.io').listen(server);
 // var io = require('socket.io')(server, {path: '../socket.io/'});
 
 var port = 8081; 
-server.listen(port, function() {
-    console.log(`Listening on ${server.address().port}`);
-});
+app.use('/', express.static(__dirname + '/public'));
+app.use('/js', express.static(__dirname + '/public/js'));
+
+
 
 
 
@@ -135,11 +136,13 @@ io.on('connection', function (socket) {
 //    res.sendFile('/public/', {root: __dirname});
 // })
 
-app.use('/', express.static(__dirname + '/public'));
+
+
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
-// app.listen(port, () => {
-//     console.log("Now listening on port " + port);
-// });
+
+server.listen(port, function() {
+    console.log(`Listening on ${server.address().port}`);
+});
