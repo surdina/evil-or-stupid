@@ -125,9 +125,7 @@ io.on('connection', function (socket) {
 
 
 
-app.use('/', express.static(__dirname + '/public'));
-app.use('/js', express.static(__dirname + '/public/js'));
-
+app.use(express.static(__dirname + '/public'));
 
 //response with index file
 
