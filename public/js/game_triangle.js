@@ -60,11 +60,11 @@ function create() {
     // this.socket = io.connect('/', {
     //     path: "/evil-or-stupid"
     // });
-    //this.socket = io();
+    this.socket = io();
 
-    this.socket = io({
-        transports: ['websocket']
-      });
+    // this.socket = io({
+    //     transports: ['websocket']
+    //   });
       
     this.otherPlayers = this.physics.add.group();
     //var walls;
