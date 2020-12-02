@@ -8,8 +8,8 @@ const config = require('./config.js');
 
 var express = require('express');
 var app     = express();
-var server  = require('http').Server(app);
-var io      = require('socket.io').listen(server);
+// var server  = require('http').Server(app);
+// var io      = require('socket.io').listen(server);
 
 app.use("/", express.static(__dirname + '/public'));
 
@@ -17,30 +17,11 @@ app.get("/", function (req, res) {
   res.sendFile(__dirname + '/public/index.html');
 });
  
-server.listen(8081, function () {
+var server = app.listen(8081, function () {
   console.log(`Listening on ${server.address().port}`);
 });
-// var express = require('express');
-// var app     = express();
-// var server  = require('http').Server(app);
-// var io      = require('socket.io').listen(server);
 
-// var io      = require('socket.io')(server);
-
-// var io = require('socket.io')(server, {path: '../socket.io/'});
-
-var port = 8081; 
-
-// server.listen(port, function() {
-//     console.log(`Listening on ${server.address().port}`);
-// });
-
-
-/*var express = require('express');
-var http = require('https');
-var app = express();
-var server = http.createServer(app);
-var io = require('socket.io')(server);*/
+var io = require('socket.io')(server);
 
 
 var players = {};
