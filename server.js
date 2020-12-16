@@ -1,16 +1,9 @@
 
-// var express = require('express');
-// var app     = express();
-// var server  = require('http').Server(app);
-// var io      = require('socket.io').listen(server);
 const config = require('./config.js');
 
 
 var express = require('express');
 var app     = express();
-// var server  = require('http').Server(app);
-// var io      = require('socket.io').listen(server);
-
 app.use("/", express.static(__dirname + '/public'));
 
 app.get("/", function (req, res) {
@@ -53,7 +46,8 @@ io.on('connection', function (socket) {
         x: Math.floor(Math.random() * 700) + 50,
         y: Math.floor(Math.random() * 500) + 50,
         playerId: socket.id,
-        team: 'green'
+        team: 'green',
+        trapped: false
     };
     // send players object to new player
     socket.emit('currentPlayers', players);
@@ -98,17 +92,26 @@ io.on('connection', function (socket) {
         io.emit('scoreUpdate', scores);
     });
 
+    socket.on('playerEntrapment', function() {
+        players[socket.id].trapped = true;
+        // emit a message to all players about the player that got trapped
+        socket.broadcast.emit('playerTrapped', players[socket.id]);
+    });
+
     socket.on('trapCollected', function () {
         // if (players[socket.id].team === 'red') {
         //     scores.red += 10;
         // } else {
         //     scores.green += 10;
         // }
-        star.x = Math.floor(Math.random() * 700) + 50;
-        star.y = Math.floor(Math.random() * 500) + 50;
+
         io.emit('starLocation', star);
         // io.emit('scoreUpdate', scores);
     });
 
 });
 
+function generateStarLocation() {
+    star.x = Math.floor(Math.random() * 700) + 50;
+    star.y = Math.floor(Math.random() * 500) + 50;
+}
