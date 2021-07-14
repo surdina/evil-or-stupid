@@ -14,8 +14,10 @@ var server = app.listen(8081, function () {
   console.log(`Listening on ${server.address().port}`);
 });
 
-var io = require('socket.io')(server);
-
+var io = require('socket.io')(server, {
+    pingInterval: 10000,
+    pingTimeout: 30000
+});
 
 var players = {};
 var star = {
