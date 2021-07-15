@@ -1,5 +1,5 @@
 
-const config = require('./config.js');
+require('./config.js');
 
 
 var express = require('express');
@@ -88,8 +88,7 @@ io.on('connection', function (socket) {
         } else {
             scores.green += 10;
         }
-        star.x = Math.floor(Math.random() * 700) + 50;
-        star.y = Math.floor(Math.random() * 500) + 50;
+        generateStarLocation();
         io.emit('starLocation', star);
         io.emit('scoreUpdate', scores);
     });

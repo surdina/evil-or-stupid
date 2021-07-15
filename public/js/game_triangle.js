@@ -43,29 +43,8 @@ function preload() {
 function create() {
     var self = this;
 
-    //    var graphics = this.add.graphics();
-    //    var rect = new Phaser.Geom.Rectangle(0, 0, 800, 600);
-    //    graphics.lineStyle(10, 0x999999, 1);
-    //    graphics.strokeRectShape(rect);
-
-    // create outer walls
-    //    make_wall(0, 0, 'h', this.physics.world.width);
-    //    make_wall(0, this.physics.world.height - 10, 'h', this.physics.world.width);
-    //    make_wall(0, 0, 'v', this.physics.world.height);
-    //    make_wall(this.physics.world.width - 10, 0, 'v', this.physics.world.height);
-
-
-
-
-    // this.socket = io.connect('/', {
-    //     path: "/evil-or-stupid"
-    // });
     this.socket = io();
-
-    // this.socket = io({
-    //     transports: ['websocket']
-    //   });
-
+    
     this.otherPlayers = this.physics.add.group();
     //var walls;
     this.walls = this.physics.add.group();
@@ -159,19 +138,6 @@ function create() {
     // - the trapped player is no longer trapped: player.trapped = false
     });
 
-    /*    this.socket.on('createWalls', function (self, createWalls) {
-            // create outer walls
-            make_wall(0, 0, 'h', self.physics.world.width);
-            make_wall(0, self.physics.world.height - 10, 'h', self.physics.world.width);
-            make_wall(0, 0, 'v', self.physics.world.height);
-            make_wall(self.physics.world.width - 10, 0, 'v', self.physics.world.height);
-            // create separation between players
-            make_wall(0, self.physics.world.height / 2, 'h', self.physics.world.width);
-            walls.enableBody = true;
-            self.physics.arcade.collide(self.ship, self.walls);
-            self.physics.world.setBounds(0, 0, 800, 600);
-        });
-            */
 }
 
 function update() {
@@ -210,6 +176,7 @@ function update() {
         };
 
     } else if (this.ship && this.ship.trapped == true) {
+        // make trap absorb player and only allow rotation
         this.physics.moveToObject(this.ship, this.trap, 60, 300);
 
         if (this.cursors.left.isDown) {
@@ -221,9 +188,9 @@ function update() {
         }
 
         // emit player movement
-        var x = this.ship.x;
-        var y = this.ship.y;
-        var r = this.ship.rotation;
+        x = this.ship.x;
+        y = this.ship.y;
+        r = this.ship.rotation;
         if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y || r !== this.ship.oldPosition.rotation)) {
             this.socket.emit('playerMovement', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation });
         }
@@ -241,7 +208,6 @@ function addPlayer(self, playerInfo) {
     self.ship.trapped = false;
     self.ship.setBounce(1, 1);
     self.ship.setCollideWorldBounds(true);
-    //self.ship.setCollideWorldBounds=true;
     //self.ship.onWorldBounds=true;
     // own ship: green
     self.ship.setTint(0x00ffaa);
@@ -263,18 +229,6 @@ function addOtherPlayers(self, playerInfo) {
     otherPlayer.playerId = playerInfo.playerId;
     self.otherPlayers.add(otherPlayer);
 }
-
-//function make_wall(self, x, y, orientation, length) {
-//    var wall;
-//    if (orientation === 'h') {
-//        wall = this.walls.create(x, y, 'hwall');
-//        wall.width = length;
-//        wall.height = 10;
-//    } else if (orientation === 'v') {
-//        wall = this.walls.create(x, y, 'vwall');
-//        wall.width = 10;
-//        wall.height = length;
-//    }
 
 
 function activateTrap(self) {
