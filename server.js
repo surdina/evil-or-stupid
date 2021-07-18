@@ -33,6 +33,7 @@ var scores = {
     green: 0,
     red: 0
 };
+var trapButton = {};
 
 
 // app.use(express.static(__dirname));
@@ -88,7 +89,7 @@ io.on('connection', function (socket) {
         } else {
             scores.green += 10;
         }
-        generateStarLocation();
+        star = generateLocation();
         io.emit('starLocation', star);
         io.emit('scoreUpdate', scores);
     });
@@ -97,22 +98,30 @@ io.on('connection', function (socket) {
         players[socket.id].trapped = true;
         // emit a message to all players about the player that got trapped
         socket.broadcast.emit('playerTrapped', players[socket.id]);
+        trapButton = generateLocation();
+        io.emit('trapButtonLocation', trapButton);
+        // TODO display button to deactivate trap
+        
     });
 
-    socket.on('trapCollected', function () {
+    socket.on('trapReleased', function () {
         // if (players[socket.id].team === 'red') {
         //     scores.red += 10;
         // } else {
         //     scores.green += 10;
         // }
-
-        io.emit('starLocation', star);
+        io.emit('playerFreed');
+        trap = generateLocation();
+        io.emit('trapLocation', trap);
         // io.emit('scoreUpdate', scores);
     });
 
 });
 
-function generateStarLocation() {
-    star.x = Math.floor(Math.random() * 700) + 50;
-    star.y = Math.floor(Math.random() * 500) + 50;
+function generateLocation() {
+    return {
+        x: Math.floor(Math.random() * 700) + 50,
+        y: Math.floor(Math.random() * 500) + 50
+    };
 }
+

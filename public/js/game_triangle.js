@@ -23,7 +23,7 @@ var config = {
     }
 };
 
-var game = new Phaser.Game(config);
+new Phaser.Game(config);
 
 function preload() {
     this.load.image('otherPlayer', 'assets/enemyBlack5.png');
@@ -33,23 +33,31 @@ function preload() {
     this.load.image('vwall', 'graphics/vwall.png');
     this.load.image('hwall', 'graphics/hwall.png');
     this.load.image('orange_dot', 'graphics/orange_dot.png');
-    this.load.image('purple_dot', 'graphics/star.png');
+    this.load.image('star', 'graphics/star.png');
     this.load.image('purple_block', 'graphics/purple_block.png');
     this.load.image('exit', 'graphics/exit2.png');
     this.load.image('trap', 'graphics/trap_large.png');
-
+    this.load.image('trapButton', 'graphics/trap_switch.png');
 }
 
 function create() {
     var self = this;
-
     this.socket = io();
     
     this.otherPlayers = this.physics.add.group();
     //var walls;
     this.walls = this.physics.add.group();
-    this.traps = this.physics.add.group();
-
+    // this.traps = this.physics.add.group({
+    //     defaultKey: 'trap',
+    //     classType: Traps,
+    //     createCallback: function (trap) {
+    //         trap.setName('trap' + this.getLength());
+    //         console.log('Created', trap.name);
+    //     },
+    //     removeCallback: function (trap) {
+    //         console.log('Removed', trap.name);
+    //     }
+    // });
 
 
 
@@ -96,46 +104,52 @@ function create() {
 
     this.socket.on('starLocation', function (starLocation) {
         if (self.star) self.star.destroy();
-        self.star = self.physics.add.image(starLocation.x, starLocation.y, 'purple_dot');
+        self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
         self.physics.add.overlap(self.ship, self.star, function () {
             this.socket.emit('starCollected');
         }, null, self);
     });
 
     this.socket.on('trapLocation', function (trapLocation) {
-        // if (self.trap) self.trap.destroy();
-        self.trap = self.physics.add.image(trapLocation.x, trapLocation.y, 'trap');
-        self.trap.body.setCircle(100);
-        self.trap.setCollideWorldBounds(true);
-        self.trap.setBounce(1, 1);
+        if (self.trap) self.trap.destroy();
+        if (self.trapButton) self.trapButton.destroy();
+
+        self.ship.trapped = false;
 
 
-
+        console.log('creating traps ...')
+        self.trap = new Trap(self, trapLocation.x, trapLocation.y);   
 
         self.physics.add.overlap(self.ship, self.trap, function () {
-            // TODO
             // do the following only if player was not trapped before
-            if (self.ship.trapped == false) {
+            if (this.ship.trapped == false) {
                 this.socket.emit('playerEntrapment');
                 console.log('player trapped');
-                activateTrap(self)
-                // self.physics.world.enable(self.trap);
-    
+                activateTrap(self);
             }
         }, null, self);
     });
     
-    this.socket.on('playerTrapped', function () {
-    // TODO: 
-    // - if player is self, restrict movement range to trap coordinates
-    // - show 'remove trap' button
+    this.socket.on('trapButtonLocation', function (trapButtonLocation) {
+        if (self.trapButton) self.trapButton.destroy();
+        self.trapButton = new TrapButton(self, trapButtonLocation.x, trapButtonLocation.y);
+        // self.trapButton = self.physics.add.image(
+        //     trapButtonLocation.x, 
+        //     trapButtonLocation.y,
+        //     'trapButton'
+        // );
+
+        self.physics.add.overlap(self.ship, self.trapButton, function() {
+          self.trapButton.destroy();
+          this.socket.emit('trapReleased');
+        }, null, self);
     });
 
+
+
     this.socket.on('playerFreed', function () {
-    if (self.trap) self.trap.destroy();
-    // TODO
-    // - When trap is destroyed, button is also destroyed
-    // - the trapped player is no longer trapped: player.trapped = false
+        console.log('all players are freeeeeeeeeeeeeee');
+        if (this.trap) this.trap.destroy();
     });
 
 }
@@ -203,6 +217,53 @@ function update() {
     }
 }
 
+class Trap extends Phaser.Physics.Arcade.Sprite {
+
+    constructor (scene, x, y)
+    {
+        super(scene, x, y, 'trap');
+
+ 
+
+        this.setTexture('trap');
+        this.setPosition(x, y);
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
+        this.body.setCircle(100);
+        this.setCollideWorldBounds(true);
+        this.setBounce(1, 1);
+
+
+    }
+
+    preUpdate (time, delta)
+    {
+        super.preUpdate(time, delta);
+        this.rotation += 0.01;
+    }
+
+}
+
+class TrapButton extends Phaser.Physics.Arcade.Image {
+    
+    constructor (scene, x, y)
+    {
+        super(scene, x, y, 'trapButton');
+
+ 
+
+        this.setTexture('trapButton');
+        this.setPosition(x, y);
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
+        this.setCollideWorldBounds(true);
+        this.setBounce(1, 1);
+
+
+    }
+}
+
+
 function addPlayer(self, playerInfo) {
     self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(36, 42);
     self.ship.trapped = false;
@@ -237,3 +298,4 @@ function activateTrap(self) {
     // if no overlap,reflect back
     
 }
+
