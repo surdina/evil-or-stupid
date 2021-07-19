@@ -239,7 +239,7 @@ class Trap extends Phaser.Physics.Arcade.Sprite {
     preUpdate (time, delta)
     {
         super.preUpdate(time, delta);
-        this.rotation += 0.01;
+        this.rotation += 0.005;
     }
 
 }
@@ -298,4 +298,3 @@ function activateTrap(self) {
     // if no overlap,reflect back
     
 }
-

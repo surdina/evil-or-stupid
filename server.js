@@ -34,11 +34,11 @@ var scores = {
     red: 0
 };
 var trapButton = {};
+var trapActive = false;
 
 
 // app.use(express.static(__dirname));
 // app.use(express.static(__dirname + '/public/'));
-
 
 
 io.on('connection', function (socket) {
@@ -54,10 +54,16 @@ io.on('connection', function (socket) {
     };
     // send players object to new player
     socket.emit('currentPlayers', players);
+    
     // send star object to new player
     socket.emit('starLocation', star);
     // send trap object to new player
     socket.emit('trapLocation', trap);
+    // send out trap button info only if someone is trapped
+    if (trapActive == true) { 
+        socket.emit('trapButtonLocation', trapButton);
+    }
+
     // send current scores to new player
     socket.emit('scoreUpdate', scores);
     // create walls     
@@ -96,9 +102,14 @@ io.on('connection', function (socket) {
 
     socket.on('playerEntrapment', function() {
         players[socket.id].trapped = true;
+
         // emit a message to all players about the player that got trapped
         socket.broadcast.emit('playerTrapped', players[socket.id]);
-        trapButton = generateLocation();
+        // create new button location only if nobody was in the trap before
+        if (trapActive == false) {
+            trapButton = generateLocation();
+        }
+        trapActive = true;
         io.emit('trapButtonLocation', trapButton);
         // TODO display button to deactivate trap
         
@@ -111,6 +122,7 @@ io.on('connection', function (socket) {
         //     scores.green += 10;
         // }
         io.emit('playerFreed');
+        trapActive = false;
         trap = generateLocation();
         io.emit('trapLocation', trap);
         // io.emit('scoreUpdate', scores);
