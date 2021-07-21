@@ -110,9 +110,7 @@ io.on('connection', function (socket) {
             trapButton = generateLocation();
         }
         trapActive = true;
-        io.emit('trapButtonLocation', trapButton);
-        // TODO display button to deactivate trap
-        
+        io.emit('trapButtonLocation', trapButton);        
     });
 
     socket.on('trapReleased', function () {

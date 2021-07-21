@@ -145,7 +145,7 @@ function create() {
         }, null, self);
     });
 
-
+ 
 
     this.socket.on('playerFreed', function () {
         console.log('all players are freeeeeeeeeeeeeee');
