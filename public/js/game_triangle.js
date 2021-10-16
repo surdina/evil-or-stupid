@@ -23,7 +23,19 @@ var config = {
     }
 };
 
-new Phaser.Game(config);
+// new Phaser.Game(config);
+
+
+class Game extends Phaser.Game {
+    constructor() {
+        super(config);
+    }
+}
+
+// New game instance
+window.onload = function() {
+    window.game = new Game();
+};
 
 function preload() {
     this.load.image('otherPlayer', 'assets/enemyBlack5.png');
@@ -133,12 +145,6 @@ function create() {
     this.socket.on('trapButtonLocation', function (trapButtonLocation) {
         if (self.trapButton) self.trapButton.destroy();
         self.trapButton = new TrapButton(self, trapButtonLocation.x, trapButtonLocation.y);
-        // self.trapButton = self.physics.add.image(
-        //     trapButtonLocation.x, 
-        //     trapButtonLocation.y,
-        //     'trapButton'
-        // );
-
         self.physics.add.overlap(self.ship, self.trapButton, function() {
           self.trapButton.destroy();
           this.socket.emit('trapReleased');
@@ -151,6 +157,9 @@ function create() {
         console.log('all players are freeeeeeeeeeeeeee');
         if (this.trap) this.trap.destroy();
     });
+
+    // TODO: show waiting screen
+    // TODO: emit when player chooses to join game
 
 }
 

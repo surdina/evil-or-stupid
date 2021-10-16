@@ -2,39 +2,50 @@
 require('./config.js');
 
 
-var express = require('express');
-var app     = express();
+const express = require('express');
+const app     = express();
 app.use("/", express.static(__dirname + '/public'));
 
 app.get("/", function (req, res) {
   res.sendFile(__dirname + '/public/index.html');
 });
  
-var server = app.listen(8081, function () {
+const server = app.listen(8081, function () {
   console.log(`Listening on ${server.address().port}`);
 });
 
-var io = require('socket.io')(server, {
+const io = require('socket.io')(server, {
     pingInterval: 10000,
     pingTimeout: 30000
 });
 
-var players = {};
-var star = {
+let players = {};
+let pairing_queue = {};
+
+const gameRooms = {
+    // [roomKey]: {
+    //     users: [],
+    //     gameScore: [],
+    //     players: [],
+    //     roundsPlayed: 0
+    // }
+};
+
+let star = {
     x: Math.floor(Math.random() * 700) + 50,
     y: Math.floor(Math.random() * 500) + 50
 };
-var trap = {
+let trap = {
     x: Math.floor(Math.random() * 700) + 50,
     y: Math.floor(Math.random() * 500) + 50
 };
-var walls = {};
-var scores = {
+let walls = {};
+let scores = {
     green: 0,
     red: 0
 };
-var trapButton = {};
-var trapActive = false;
+let trapButton = {};
+let trapActive = false;
 
 
 // app.use(express.static(__dirname));
@@ -54,7 +65,15 @@ io.on('connection', function (socket) {
     };
     // send players object to new player
     socket.emit('currentPlayers', players);
-    
+
+
+    // TODO: build waiting room
+
+    // TODO: start new game here. 
+    // Each game should have a separate game_id.
+    // Generate star and trap coordinates for each game separately. 
+
+
     // send star object to new player
     socket.emit('starLocation', star);
     // send trap object to new player
@@ -124,6 +143,11 @@ io.on('connection', function (socket) {
         trap = generateLocation();
         io.emit('trapLocation', trap);
         // io.emit('scoreUpdate', scores);
+    });
+
+    socket.on('joinGame', function() {
+        players[socket.id].is_playing = true;
+        players[socket.id].game_id = 0;
     });
 
 });
