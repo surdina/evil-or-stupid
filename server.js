@@ -22,15 +22,20 @@ const io = require('socket.io')(server, {
 let players = {};
 
 const gameRooms = {
-    // [roomKey]: {
-    //     users: [],
-    //     randomTasks: [],
-    //     scores: [],
-    //     gameScore: 0,
-    //     players: {},
-    //     numPlayers: 0,
-    //     roundsPlayed: 0,
-    // }
+
+    // roomKey: key,
+    // randomTasks: [],
+    // gameScore: 0,
+    // scores: {},
+    // players: {},
+    // numPlayers: 0,
+    // roundsPlayed: 0,
+    // star: generateLocation(),
+    // trap: generateLocation(),
+    // trapButton: {},
+    // trapActive: false,
+    // roomType: "",
+
 };
 var availableRoomKey = "";
 
@@ -75,7 +80,7 @@ io.on('connection', function (socket) {
     //         team: 'green',
     //         trapped: false        
     //     };
-    //     socket.to(roomKey).emit("setStartingState", roomInfo);
+    //     io.sockets.in(roomKey).emit("setStartingState", roomInfo);
     //     console.log("sending setStartingState to roomKey " + roomKey)
     // });
 
@@ -151,8 +156,7 @@ io.on('connection', function (socket) {
 
 
     // Emit room info when player joins a game
-
-
+    
 
     // send star object to new player
     socket.emit('starLocation', star);
@@ -160,7 +164,8 @@ io.on('connection', function (socket) {
     socket.emit('trapLocation', trap);
     // send out trap button info only if someone is trapped
     if (trapActive == true) { 
-        socket.emit('trapButtonLocation', trapButton);
+        // todo emit new trap button location, room-specific
+        socket.broadcast.to(players[socket.id].roomKey).emit('trapButtonLocation', trapButton);
     }
 
     // send current scores to new player
@@ -186,7 +191,7 @@ io.on('connection', function (socket) {
         players[socket.id].y = movementData.y;
         players[socket.id].rotation = movementData.rotation;
 
-        // emit a message to all players about the player that moved
+        // emit a message to all other players about the player that moved
         socket.broadcast.to(players[socket.id].roomKey).emit('playerMoved', players[socket.id]);
     });
     
@@ -197,21 +202,21 @@ io.on('connection', function (socket) {
             scores.green += 10;
         }
         star = generateLocation();
-        io.emit('starLocation', star);
-        io.emit('scoreUpdate', scores);
+        io.sockets.in(players[socket.id].roomKey).emit('starLocation', star);
+        io.sockets.in(players[socket.id].roomKey).emit('scoreUpdate', scores);
     });
 
     socket.on('playerEntrapment', function() {
         players[socket.id].trapped = true;
 
-        // emit a message to all players about the player that got trapped
+        // emit a message to all other players about the player that got trapped
         socket.broadcast.to(players[socket.id].roomKey).emit('playerTrapped', players[socket.id]);
         // create new button location only if nobody was in the trap before
         if (trapActive == false) {
             trapButton = generateLocation();
         }
         trapActive = true;
-        io.emit('trapButtonLocation', trapButton);        
+        io.sockets.in(players[socket.id].roomKey).emit('trapButtonLocation', trapButton);        
     });
 
     socket.on('trapReleased', function () {
@@ -220,10 +225,10 @@ io.on('connection', function (socket) {
         // } else {
         //     scores.green += 10;
         // }
-        io.emit('playerFreed');
+        socket.broadcast.to(players[socket.id].roomKey).emit('playerFreed');
         trapActive = false;
         trap = generateLocation();
-        io.emit('trapLocation', trap);
+        io.sockets.in(players[socket.id].roomKey).emit('trapLocation', trap);
         // io.emit('scoreUpdate', scores);
     });
 
@@ -258,8 +263,10 @@ function createGameRoom() {
          players: {},
          numPlayers: 0,
          roundsPlayed: 0,
-         starLocation: {},
-         trapLocation: {},
+         star: generateLocation(),
+         trap: generateLocation(),
+         trapButton: {},
+         trapActive: false,
          roomType: "",
      };
      return key;

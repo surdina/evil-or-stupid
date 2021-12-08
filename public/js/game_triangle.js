@@ -1,12 +1,16 @@
 const gameRooms = {
-    // [roomKey]: {
-    //     users: [],
-    //     randomTasks: [],
-    //     scores: [],
-    //     gameScore: 0,
-    //     players: {},
-    //     numPlayers: 0
-    // }
+    // roomKey: key,
+    // randomTasks: [],
+    // gameScore: 0,
+    // scores: {},
+    // players: {},
+    // numPlayers: 0,
+    // roundsPlayed: 0,
+    // star: generateLocation(),
+    // trap: generateLocation(),
+    // trapButton: {},
+    // trapActive: false,
+    // roomType: "",
 }
 var gameStarted = 0;
 var gameJoined = 0;
@@ -79,6 +83,8 @@ class GameScene extends Phaser.Scene {
         this.roomInfo = data.roomInfo;
         console.log("Room info: " + this.roomInfo);
         this.players = data.roomInfo.players;
+        this.starLocation = data.roomInfo.star;
+        this.trapLocation = data.roomInfo.trap;
     }
 
     preload() {
@@ -87,9 +93,11 @@ class GameScene extends Phaser.Scene {
     create() {
        const self = this;
        this.scene.stop("WaitingScene");
-       console.log("game scene starting");
-       console.log("socket id when gameStarted: " + this.socket.id);
-  
+        
+               console.log("game scene starting");
+        console.log("socket id when gameStarted: " + this.socket.id);
+       
+
     
         // extract info about other player from starting state
         
@@ -103,7 +111,16 @@ class GameScene extends Phaser.Scene {
             } else {
                 addOtherPlayers(self, self.players[id]);
         }});
-      
+        
+        
+        // extract info about trap and star from starting state
+
+        this.star = this.physics.add.image(this.starLocation.x, this.starLocation.y, 'star');
+            self.physics.add.overlap(this.ship, this.star, function () {
+                this.star.destroy();
+                this.socket.emit('starCollected');
+                console.log("star collected!");
+            }, null, self);
     
     
         this.socket.on('currentPlayers', function (players) {
@@ -151,15 +168,17 @@ class GameScene extends Phaser.Scene {
         this.socket.on('starLocation', function (starLocation) {
             if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
+            console.log("star location received!")
             self.physics.add.overlap(self.ship, self.star, function () {
-                this.socket.emit('starCollected');
+                self.star.destroy();
+                self.socket.emit('starCollected');
+                console.log("star collected!");
             }, null, self);
         });
     
         this.socket.on('trapLocation', function (trapLocation) {
             if (self.trap) self.trap.destroy();
             if (self.trapButton) self.trapButton.destroy();
-    
             self.ship.trapped = false;
     
     
