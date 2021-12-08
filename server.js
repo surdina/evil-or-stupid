@@ -131,6 +131,8 @@ io.on('connection', function (socket) {
             y: Math.floor(Math.random() * 500) + 50,
             playerId: socket.id,
             team: 'green',
+            points: 0,
+            pointsOther: 0,
             trapped: false,
             roomKey : availableRoomKey,
         };
@@ -196,14 +198,12 @@ io.on('connection', function (socket) {
     });
     
     socket.on('starCollected', function () {
-        if (players[socket.id].team === 'red') {
-            scores.red += 10;
-        } else {
-            scores.green += 10;
-        }
+
+        players[socket.id].points += 10;
         star = generateLocation();
         io.sockets.in(players[socket.id].roomKey).emit('starLocation', star);
-        io.sockets.in(players[socket.id].roomKey).emit('scoreUpdate', scores);
+        io.to(socket.id).emit("scoreUpdateYou", players[socket.id].points);
+        socket.broadcast.to(players[socket.id].roomKey).emit("scoreUpdateOther", players[socket.id].points);
     });
 
     socket.on('playerEntrapment', function() {
@@ -220,16 +220,12 @@ io.on('connection', function (socket) {
     });
 
     socket.on('trapReleased', function () {
-        // if (players[socket.id].team === 'red') {
-        //     scores.red += 10;
-        // } else {
-        //     scores.green += 10;
-        // }
+
         socket.broadcast.to(players[socket.id].roomKey).emit('playerFreed');
         trapActive = false;
         trap = generateLocation();
         io.sockets.in(players[socket.id].roomKey).emit('trapLocation', trap);
-        // io.emit('scoreUpdate', scores);
+    // todo adjust scores
     });
 
 
@@ -284,3 +280,5 @@ function assignRoomKey() {
     }
     return availableRoomKey;
 }
+
+

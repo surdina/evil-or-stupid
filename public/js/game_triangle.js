@@ -157,12 +157,15 @@ class GameScene extends Phaser.Scene {
     
         this.cursors = this.input.keyboard.createCursorKeys();
     
-        this.greenScoreText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#1fc888' });
-        this.redScoreText = this.add.text(584, 16, '', { fontSize: '32px', fill: '#FF0000' });
-    
-        this.socket.on('scoreUpdate', function (scores) {
-            self.greenScoreText.setText('You: ' + scores.green);
-            self.redScoreText.setText('Other: ' + scores.red);
+        this.greenScoreText = this.add.text(16, 16, "You: 0", { fontSize: '32px', fill: '#1fc888' });
+        this.redScoreText = this.add.text(584, 16, "Other: 0", { fontSize: '32px', fill: '#FF0000' });
+
+        this.socket.on('scoreUpdateYou', function (points) {
+            self.greenScoreText.setText('You: ' + points);
+        });
+
+        this.socket.on("scoreUpdateOther", function (pointsOther) {
+            self.redScoreText.setText('Other: ' + pointsOther);
         });
     
         this.socket.on('starLocation', function (starLocation) {
