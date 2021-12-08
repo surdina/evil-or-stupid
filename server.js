@@ -142,6 +142,8 @@ io.on('connection', function (socket) {
             io.sockets.in(roomInfo.roomKey).emit("setStartingState", roomInfo);
              // send players object to players in rooom
             io.sockets.in(roomInfo.roomKey).emit("currentPlayers", players);
+        } else if(roomInfo.numPlayers < 2) {
+            io.sockets.in(roomInfo.roomKey).emit("goToWaitingRoom");
         }
 
 
