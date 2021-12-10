@@ -122,6 +122,17 @@ class GameScene extends Phaser.Scene {
                 console.log("star collected!");
             }, null, self);
     
+
+        this.trap = new Trap(this, this.trapLocation.x, this.trapLocation.y);   
+        this.physics.add.overlap(this.ship, this.trap, function () {
+            // do the following only if player was not trapped before
+            if (this.ship.trapped == false) {
+                this.socket.emit('playerEntrapment');
+                console.log('player trapped');
+                activateTrap(self);
+            }
+        }, null, self);
+
     
         this.socket.on('currentPlayers', function (players) {
             console.log(players);
