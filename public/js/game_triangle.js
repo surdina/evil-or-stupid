@@ -99,7 +99,7 @@ class GameScene extends Phaser.Scene {
        const self = this;
        this.scene.stop("WaitingScene");
         
-               console.log("game scene starting");
+        console.log("game scene starting");
         console.log("socket id when gameStarted: " + this.socket.id);
        
 
@@ -154,8 +154,9 @@ class GameScene extends Phaser.Scene {
     
         // });
     
-        this.socket.on('disconnect', function (playerId) {
+        this.socket.on('userDisconnect', function (playerId) {
             self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+                console.log("other player disconnected");
                 if (playerId === otherPlayer.playerId) {
                     otherPlayer.destroy();
                 }
@@ -172,12 +173,12 @@ class GameScene extends Phaser.Scene {
         });
     
         this.cursors = this.input.keyboard.createCursorKeys();
-    
-        this.greenScoreText = this.add.text(16, 16, "You: 0", { fontSize: '32px', fill: '#1fc888' });
-        this.redScoreText = this.add.text(584, 16, "Other: 0", { fontSize: '32px', fill: '#FF0000' });
+        this.scoreText = this.add.text(650, 10, "Score", { fontSize: '24px', fontStyle: 'bold'});
+        this.greenScoreText = this.add.text(650, 35, "You:    0", { fontSize: '24px', fill: '#1fc888' });
+        this.redScoreText = this.add.text(650, 60, "Other: 0", { fontSize: '24px', fill: '#FF0000' });
 
         this.socket.on('scoreUpdateYou', function (points) {
-            self.greenScoreText.setText('You: ' + points);
+            self.greenScoreText.setText('You:    ' + points);
         });
 
         this.socket.on("scoreUpdateOther", function (pointsOther) {
@@ -310,7 +311,7 @@ class WaitingScene extends Phaser.Scene {
     create() {
         const scene = this;
         this.socket.emit("getRoomKey");
-        this.add.text(20, 20, 'Waiting for second player to join')
+        this.add.text(5, 50, 'Waiting for second player to join')
 
         this.socket.on("startGame", function(availableRoomKey){
             console.log("starting signal received! RoomKey: " + availableRoomKey);
@@ -362,7 +363,7 @@ class WelcomeScene extends Phaser.Scene {
 
     create() {
         const scene = this;
-        this.add.text(20, 20, 'Press any key to start game...')
+        this.add.text(5, 50, 'Press any key to start game...')
 
 
         this.input.keyboard.on('keydown', function() {

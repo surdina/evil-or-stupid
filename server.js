@@ -160,18 +160,18 @@ io.on('connection', function (socket) {
     // Emit room info when player joins a game
     
 
-    // send star object to new player
-    socket.emit('starLocation', star);
-    // send trap object to new player
-    socket.emit('trapLocation', trap);
-    // send out trap button info only if someone is trapped
-    if (trapActive == true) { 
-        // todo emit new trap button location, room-specific
-        socket.broadcast.to(players[socket.id].roomKey).emit('trapButtonLocation', trapButton);
-    }
+    // // send star object to new player
+    // socket.emit('starLocation', star);
+    // // send trap object to new player
+    // socket.emit('trapLocation', trap);
+    // // send out trap button info only if someone is trapped
+    // if (trapActive == true) { 
+    //     // todo emit new trap button location, room-specific
+    //     socket.broadcast.to(players[socket.id].roomKey).emit('trapButtonLocation', trapButton);
+    // }
 
-    // send current scores to new player
-    socket.emit('scoreUpdate', scores);
+    // // send current scores to new player
+    // socket.emit('scoreUpdate', scores);
     // create walls     
     socket.emit('createWalls', walls);
     // update all other players of the new player
@@ -179,12 +179,26 @@ io.on('connection', function (socket) {
 
     console.log("socket.id: " + socket.id);
 
-    socket.on('disconnect', function() {
-        console.log('user disconnected');
-        // remove this player from players object
-        delete players[socket.id];
+    socket.on('disconnecting', function() {
+        console.log('user with socket id ' + socket.id + ' disconnected');
         // emit a message to all players to remove this player
-        io.emit('disconnect', socket.id);
+        socket.broadcast.to(players[socket.id].roomKey).emit('userDisconnect', socket.id);
+        // remove this player from players object
+        // TODO gets stuck here
+        console.log(players[socket.id]);
+        console.log('removing user ' + socket.id);
+
+        gameRooms[players[socket.id].roomKey].numPlayers -= 1;
+        delete gameRooms[players[socket.id].roomKey].players[socket.id];
+        delete players[socket.id];
+
+        // remove player from room
+
+        // remove player from players list
+
+        // delete gameRooms[players[socket.id].roomKey].players[socket.id];
+
+        // delete players[socket.id];
     });
     
     // when a player moves, update the player data
