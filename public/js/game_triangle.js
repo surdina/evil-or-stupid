@@ -1,14 +1,19 @@
 const gameRooms = {
-    // [roomKey]: {
-    //     users: [],
-    //     randomTasks: [],
-    //     scores: [],
-    //     gameScore: 0,
-    //     players: {},
-    //     numPlayers: 0
-    // }
+    // roomKey: key,
+    // randomTasks: [],
+    // gameScore: 0,
+    // scores: {},
+    // players: {},
+    // numPlayers: 0,
+    // roundsPlayed: 0,
+    // star: generateLocation(),
+    // trap: generateLocation(),
+    // trapButton: {},
+    // trapActive: false,
+    // roomType: "",
 }
 var gameStarted = 0;
+var gameJoined = 0;
 
 
 class Game extends Phaser.Game {
@@ -66,6 +71,9 @@ class MainScene extends Phaser.Scene {
             scene.scene.launch("WelcomeScene", { socket: scene.socket });
         });
 
+        
+
+
 
     }
 }
@@ -80,6 +88,8 @@ class GameScene extends Phaser.Scene {
         this.roomInfo = data.roomInfo;
         console.log("Room info: " + this.roomInfo);
         this.players = data.roomInfo.players;
+        this.starLocation = data.roomInfo.star;
+        this.trapLocation = data.roomInfo.trap;
     }
 
     preload() {
@@ -87,9 +97,12 @@ class GameScene extends Phaser.Scene {
 
     create() {
        const self = this;
-       console.log("game scene starting");
-       console.log("socket id when gameStarted: " + this.socket.id);
-  
+       this.scene.stop("WaitingScene");
+        
+               console.log("game scene starting");
+        console.log("socket id when gameStarted: " + this.socket.id);
+       
+
     
         // extract info about other player from starting state
         
@@ -103,26 +116,16 @@ class GameScene extends Phaser.Scene {
             } else {
                 addOtherPlayers(self, self.players[id]);
         }});
-
-        self.trap = new Trap(
-            self, 
-            self.roomInfo.trapLocation.x, 
-            self.roomInfo.trapLocation.y
-        );
         
-        self.physics.add.overlap(self.ship, self.trap, function () {
-            // do the following only if player was not trapped before
-            if (this.ship.trapped == false) {
-                this.socket.emit('playerEntrapment');
-                console.log('player trapped');
-                activateTrap(self);
-            }
-        }, null, self);
-      
-        this.socket.on("sendRoomKey", function(availableRoomKey) {
-            console.log("Joining room with roomKey: " + availableRoomKey);
-            self.socket.emit("joinRoom", availableRoomKey);
-        });
+        
+        // extract info about trap and star from starting state
+
+        this.star = this.physics.add.image(this.starLocation.x, this.starLocation.y, 'star');
+            self.physics.add.overlap(this.ship, this.star, function () {
+                this.star.destroy();
+                this.socket.emit('starCollected');
+                console.log("star collected!");
+            }, null, self);
     
     
         this.socket.on('currentPlayers', function (players) {
@@ -170,15 +173,17 @@ class GameScene extends Phaser.Scene {
         this.socket.on('starLocation', function (starLocation) {
             if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
+            console.log("star location received!")
             self.physics.add.overlap(self.ship, self.star, function () {
-                this.socket.emit('starCollected');
+                self.star.destroy();
+                self.socket.emit('starCollected');
+                console.log("star collected!");
             }, null, self);
         });
     
         this.socket.on('trapLocation', function (trapLocation) {
             if (self.trap) self.trap.destroy();
             if (self.trapButton) self.trapButton.destroy();
-    
             self.ship.trapped = false;
     
     
@@ -210,7 +215,6 @@ class GameScene extends Phaser.Scene {
             console.log('all players are freeeeeeeeeeeeeee');
             if (this.trap) this.trap.destroy();
         });
-    
     
     }
 
@@ -276,8 +280,6 @@ class GameScene extends Phaser.Scene {
             };
         }
     }
-
-
 }
 
 
@@ -288,16 +290,25 @@ class WaitingScene extends Phaser.Scene {
 
     init(data) {
         this.socket = data.socket;
-        // console.log("socket id in WaitingScene: ", this.socket.id);
+        console.log("Starting WaitingScene for socket id: ", this.socket.id);
     }
 
     create() {
         const scene = this;
-        this.add.text(20, 50, 'Waiting for second player to join')
+        this.socket.emit("getRoomKey");
+        this.add.text(20, 20, 'Waiting for second player to join')
 
         this.socket.on("startGame", function(availableRoomKey){
             console.log("starting signal received! RoomKey: " + availableRoomKey);
         });
+
+
+        this.socket.on("sendRoomKey", function(availableRoomKey) {
+            console.log("Joining room with roomKey: " + availableRoomKey);
+        });
+
+
+
         this.socket.on("setStartingState", function(roomInfo) {
             console.log("setStartingState: " + roomInfo);
             // const { roomKey, players, numPlayers } = roomInfo;
@@ -309,7 +320,7 @@ class WaitingScene extends Phaser.Scene {
             // state
             // this.state.roomKey = roomKey;
             // this.state.players = players;
-
+            console.log("starting game scene from waiting scene");
             scene.scene.start("GameScene", { socket: scene.socket,
             roomInfo: roomInfo });
 
@@ -332,24 +343,52 @@ class WelcomeScene extends Phaser.Scene {
 
     init(data) {
         this.socket = data.socket;
-        // console.log("socket id in WelcomeScene: ", this.socket.id);
+        console.log("Starting WelcomeScene for socket id: ", this.socket.id);
     }
 
     create() {
-        this.add.text(20, 50, 'Press any key to start game...')
+        const scene = this;
+        this.add.text(20, 20, 'Press any key to start game...')
+
+
         this.input.keyboard.on('keydown', function() {
             console.log("requesting to start gamescene");
             gameStarted = 1;
+
+
+        // Ask server if a room is available!
+        // If yes, go to game scene
+        // If no, go to waiting scene
+
+
         });
+
+        // this.socket.on("setState", function(roomInfo) {
+        //     console.log("setState: " + roomInfo);
+        //     const { roomKey, players, numPlayers } = roomInfo;
+        //     scene.physics.resume();
+
+
+        //     // TODO update to actual data sent in state info
+        //     // state
+        //     scene.state.roomKey = roomKey;
+        //     scene.state.players = players;
+
+        //     console.log(roomInfo);
+        //     if (roomInfo.numPlayers < 2) {
+        //         scene.scene.start("WaitingScene", { socket: scene.socket });
+        //     } else {
+        //         scene.scene.start("GameScene", { socket: scene.socket });
+        //     }
+        // });
+
+        // TODO: add other listeners
     }
 
-    update() {
-        if (gameStarted == 1) {
+    update() {        
+        if (gameStarted == 1 && gameJoined == 0) {
             this.scene.start("WaitingScene", { socket: this.socket });
-            this.socket.emit("getRoomKey");
-
         }
-
 
     }
 }
