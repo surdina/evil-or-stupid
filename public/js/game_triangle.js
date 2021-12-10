@@ -55,10 +55,15 @@ class MainScene extends Phaser.Scene {
         this.load.image('exit', 'graphics/exit2.png');
         this.load.image('trap', 'graphics/trap_large.png');
         this.load.image('trapButton', 'graphics/trap_switch.png');
+        this.load.image('title', 'graphics/title.png');
+
     }
 
     create() {
         this.socket = io();
+
+        this.add.image(5, 5, 'title').setOrigin(0, 0);
+
         const scene = this;
         // console.log("this socket: " + this.socket.id);
         this.socket.on("connect", function() {
