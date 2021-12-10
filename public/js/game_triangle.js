@@ -50,10 +50,15 @@ class MainScene extends Phaser.Scene {
         this.load.image('exit', 'graphics/exit2.png');
         this.load.image('trap', 'graphics/trap_large.png');
         this.load.image('trapButton', 'graphics/trap_switch.png');
+        this.load.image('title', 'graphics/title.png');
+
     }
 
     create() {
         this.socket = io();
+
+        this.add.image(5, 5, 'title').setOrigin(0, 0);
+
         const scene = this;
         // console.log("this socket: " + this.socket.id);
         this.socket.on("connect", function() {
@@ -61,29 +66,6 @@ class MainScene extends Phaser.Scene {
             scene.scene.launch("WelcomeScene", { socket: scene.socket });
         });
 
-        
-
-
-        // this.socket.on("setState", function(roomInfo) {
-        //     console.log("setState: " + roomInfo);
-        //     const { roomKey, players, numPlayers } = roomInfo;
-        //     scene.physics.resume();
-
-
-        //     // TODO update to actual data sent in state info
-        //     // state
-        //     scene.state.roomKey = roomKey;
-        //     scene.state.players = players;
-
-        //     console.log(roomInfo);
-        //     if (roomInfo.numPlayers < 2) {
-        //         scene.scene.start("WaitingScene", { socket: scene.socket });
-        //     } else {
-        //         scene.scene.start("GameScene", { socket: scene.socket });
-        //     }
-        // });
-
-        // TODO: add other listeners
 
     }
 }
@@ -121,6 +103,21 @@ class GameScene extends Phaser.Scene {
             } else {
                 addOtherPlayers(self, self.players[id]);
         }});
+
+        self.trap = new Trap(
+            self, 
+            self.roomInfo.trapLocation.x, 
+            self.roomInfo.trapLocation.y
+        );
+        
+        self.physics.add.overlap(self.ship, self.trap, function () {
+            // do the following only if player was not trapped before
+            if (this.ship.trapped == false) {
+                this.socket.emit('playerEntrapment');
+                console.log('player trapped');
+                activateTrap(self);
+            }
+        }, null, self);
       
         this.socket.on("sendRoomKey", function(availableRoomKey) {
             console.log("Joining room with roomKey: " + availableRoomKey);
@@ -214,8 +211,6 @@ class GameScene extends Phaser.Scene {
             if (this.trap) this.trap.destroy();
         });
     
-        // TODO: show waiting screen
-        // TODO: emit when player chooses to join game
     
     }
 
@@ -298,7 +293,7 @@ class WaitingScene extends Phaser.Scene {
 
     create() {
         const scene = this;
-        this.add.text(20, 20, 'Waiting for second player to join')
+        this.add.text(20, 50, 'Waiting for second player to join')
 
         this.socket.on("startGame", function(availableRoomKey){
             console.log("starting signal received! RoomKey: " + availableRoomKey);
@@ -341,7 +336,7 @@ class WelcomeScene extends Phaser.Scene {
     }
 
     create() {
-        this.add.text(20, 20, 'Press any key to start game...')
+        this.add.text(20, 50, 'Press any key to start game...')
         this.input.keyboard.on('keydown', function() {
             console.log("requesting to start gamescene");
             gameStarted = 1;
