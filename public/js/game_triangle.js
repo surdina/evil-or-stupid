@@ -68,8 +68,16 @@ class MainScene extends Phaser.Scene {
         // console.log("this socket: " + this.socket.id);
         this.socket.on("connect", function() {
             console.log('io socket id assigned: ' + scene.socket.id);
-            scene.scene.launch("WelcomeScene", { socket: scene.socket });
+            // start game
+            if (!scene.scene.isActive("GameScene")) {
+                scene.scene.launch("WelcomeScene", { socket: scene.socket });
+            // if game was already running, get new info on state
+            } else {
+                console.log("requesting up-to-date game state from server");
+                scene.socket.emit("requestCurrentState");
+            }
         });
+
 
         
 
@@ -90,6 +98,8 @@ class GameScene extends Phaser.Scene {
         this.players = data.roomInfo.players;
         this.starLocation = data.roomInfo.star;
         this.trapLocation = data.roomInfo.trap;
+        this.trapButton = data.roomInfo.trapButton;
+        this.trapActive = data.roomInfo.trapActive;
     }
 
     preload() {
@@ -103,10 +113,9 @@ class GameScene extends Phaser.Scene {
         console.log("socket id when gameStarted: " + this.socket.id);
        
 
-    
         // extract info about other player from starting state
-        
         this.otherPlayers = this.physics.add.group();
+
         //var walls;
         this.walls = this.physics.add.group();
 
@@ -114,6 +123,9 @@ class GameScene extends Phaser.Scene {
             if (self.players[id].playerId === self.socket.id) {
                 addPlayer(self, self.players[id]);
             } else {
+                self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+                    otherPlayer.destroy();
+                });
                 addOtherPlayers(self, self.players[id]);
         }});
         
@@ -138,9 +150,25 @@ class GameScene extends Phaser.Scene {
             }
         }, null, self);
 
+        console.log("checking if trap is active");
+
+        // if joining an existing room with an active trap, show release button
+        if (this.trapActive && this.trapButton) {
+            console.log("creating trap button");
+            this.trapButton = new TrapButton(this, this.trapButton.x, this.trapButton.y);
+            this.physics.add.overlap(this.ship, this.trapButton, function() {
+                this.trapButton.destroy();
+              this.socket.emit('trapReleased');
+            }, null, self);
+        }
+
     
         this.socket.on('currentPlayers', function (players) {
             console.log(players);
+            if(self.infoText) {
+                self.infoText.setText('');
+            }
+
             Object.keys(players).forEach(function (id) {
                 if (players[id].playerId === self.socket.id) {
                     addPlayer(self, players[id]);
@@ -149,17 +177,49 @@ class GameScene extends Phaser.Scene {
                 }
             });
         });
-        // this.socket.on('newPlayer', function (playerInfo) {
-        //     addOtherPlayers(self, playerInfo);
-    
-        // });
+ 
     
         this.socket.on('userDisconnect', function (playerId) {
             self.otherPlayers.getChildren().forEach(function (otherPlayer) {
                 console.log("other player disconnected");
-                if (playerId === otherPlayer.playerId) {
-                    otherPlayer.destroy();
-                }
+                self.infoText.setText('> Game paused \n> [other player disconnected; waiting for new player]');
+                otherPlayer.destroy();
+            });
+        });
+
+        this.socket.on('disconnect', function () {
+            console.log("connection to server lost");
+            // otherPlayer.destroy();
+            // self.scene.stop("GameScene");
+
+            if (reason === "io server disconnect") {
+                // the disconnection was initiated by the server, you need to reconnect manually
+                console.log("connection was ended by the server")
+            }
+        });
+
+       
+        this.socket.on('connect_error', function(e){
+            console.log("connect error: ", e);
+         });
+
+        this.socket.on("updateState", function(roomInfo) {
+            console.log("updateState received!");
+            console.log("roomInfo: ", roomInfo);
+
+            self.roomInfo = roomInfo;
+
+            let playerInfo = roomInfo.players;
+            self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+                if (playerInfo.playerId === otherPlayer.playerId) {
+                    otherPlayer.setRotation(playerInfo.rotation);
+                    otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+                } 
+
+                // TODO HERE 
+
+                // UPDATE ALL COORDINATES ON SCREEN
+                // REMOVE ALL PLAYERS NOT MENTIONED IN PLAYER INFO
             });
         });
     
@@ -171,11 +231,13 @@ class GameScene extends Phaser.Scene {
                 }
             });
         });
+
     
         this.cursors = this.input.keyboard.createCursorKeys();
         this.scoreText = this.add.text(650, 10, "Score", { fontSize: '24px', fontStyle: 'bold'});
         this.greenScoreText = this.add.text(650, 35, "You:    0", { fontSize: '24px', fill: '#1fc888' });
         this.redScoreText = this.add.text(650, 60, "Other: 0", { fontSize: '24px', fill: '#FF0000' });
+        this.infoText = this.add.text(10, 550, "", { fontSize: '16px' });
 
         this.socket.on('scoreUpdateYou', function (points) {
             self.greenScoreText.setText('You:    ' + points);
@@ -186,6 +248,9 @@ class GameScene extends Phaser.Scene {
         });
     
         this.socket.on('starLocation', function (starLocation) {
+
+            self.roomInfo.star.x = starLocation.x;
+            self.roomInfo.star.y = starLocation.y;
             if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
             console.log("star location received!")
@@ -216,7 +281,7 @@ class GameScene extends Phaser.Scene {
         });
         
         this.socket.on('trapButtonLocation', function (trapButtonLocation) {
-            if (self.trapButton) self.trapButton.destroy();
+            if (self.trapButton.x) self.trapButton.destroy();
             self.trapButton = new TrapButton(self, trapButtonLocation.x, trapButtonLocation.y);
             self.physics.add.overlap(self.ship, self.trapButton, function() {
               self.trapButton.destroy();
@@ -234,6 +299,26 @@ class GameScene extends Phaser.Scene {
     }
 
     update() {
+
+        // update to new star coordinates
+        if (this.star.x && this.roomInfo.star.x) {
+            if (
+                this.star.x != this.roomInfo.star.x || 
+                this.star.y != this.roomInfo.star.y 
+                ) {
+                    console.log("current star coordinates: ", this.star);
+                    console.log("roomInfo star coordinates: ", this.roomInfo.star);
+
+                    this.star.x = this.roomInfo.star.x;
+                    this.star.y = this.roomInfo.star.y; 
+                }
+                
+            }
+
+        
+
+
+        // ship movement
 
         if (this.ship && this.ship.trapped == false) {
     
@@ -335,9 +420,11 @@ class WaitingScene extends Phaser.Scene {
             // state
             // this.state.roomKey = roomKey;
             // this.state.players = players;
-            console.log("starting game scene from waiting scene");
-            scene.scene.start("GameScene", { socket: scene.socket,
-            roomInfo: roomInfo });
+            if (!scene.scene.isActive("GameScene")) {
+                console.log("game scene is not active; running game scene")
+                scene.scene.run("GameScene", { socket: scene.socket,
+                    roomInfo: roomInfo });
+            } 
 
             console.log(roomInfo);
 
@@ -377,27 +464,6 @@ class WelcomeScene extends Phaser.Scene {
 
 
         });
-
-        // this.socket.on("setState", function(roomInfo) {
-        //     console.log("setState: " + roomInfo);
-        //     const { roomKey, players, numPlayers } = roomInfo;
-        //     scene.physics.resume();
-
-
-        //     // TODO update to actual data sent in state info
-        //     // state
-        //     scene.state.roomKey = roomKey;
-        //     scene.state.players = players;
-
-        //     console.log(roomInfo);
-        //     if (roomInfo.numPlayers < 2) {
-        //         scene.scene.start("WaitingScene", { socket: scene.socket });
-        //     } else {
-        //         scene.scene.start("GameScene", { socket: scene.socket });
-        //     }
-        // });
-
-        // TODO: add other listeners
     }
 
     update() {        
@@ -485,35 +551,36 @@ class TrapButton extends Phaser.Physics.Arcade.Image {
 
 
 function addPlayer(self, playerInfo) {
-    self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(36, 42);
-    self.ship.trapped = false;
-    self.ship.setBounce(1, 1);
-    self.ship.setCollideWorldBounds(true);
-    //self.ship.onWorldBounds=true;
-    // own ship: green
-    self.ship.setTint(0x00ffaa);
-    self.ship.setDrag(50);
-    self.ship.setAngularDrag(50);
-    self.ship.setMaxVelocity(400);
+    if (!self.ship) {
+        self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(36, 42);
+        self.ship.trapped = false;
+        self.ship.setBounce(1, 1);
+        self.ship.setCollideWorldBounds(true);
+        //self.ship.onWorldBounds=true;
+        // own ship: green
+        self.ship.setTint(0x00ffaa);
+        self.ship.setDrag(50);
+        self.ship.setAngularDrag(50);
+        self.ship.setMaxVelocity(400);
+    }
+
 }
 
 function addOtherPlayers(self, playerInfo) {
-    const otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(36, 42);
-    //    if (playerInfo.team === 'green') {
-    //        otherPlayer.setTint(0x0000ff);
-    //    } else {
-    //        otherPlayer.setTint(0xff0000);
-    //    }
+    //otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(36, 42);
+    otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(36, 42);
+
+
 
     // other ship: grey
     otherPlayer.setTint(0x666666);
     otherPlayer.playerId = playerInfo.playerId;
     self.otherPlayers.add(otherPlayer);
+
 }
 
 
 function activateTrap(self) {
-    //self.physics.add.collider(self.ship, self.trap)
     self.ship.trapped = true;
     // if no overlap,reflect back
     
