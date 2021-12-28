@@ -194,9 +194,15 @@ io.on('connection', function (socket) {
             if (gameRooms[players[socket.id].roomKey].trapActive == false) {
                trapButton = generateLocation();
                 gameRooms[players[socket.id].roomKey].trapButton = trapButton;
+                gameRooms[players[socket.id].roomKey].trapActive = true;
+                io.sockets.in(players[socket.id].roomKey).emit('trapButtonLocation', trapButton); 
+            } else {
+                // if someone was in the trap before, both are trapped now 
+                // (TODO: check to make sure)
+                // if yes, 
+
+                io.sockets.in(players[socket.id].roomKey).emit("bothPlayersTrapped"); 
             }
-            gameRooms[players[socket.id].roomKey].trapActive = true;
-            io.sockets.in(players[socket.id].roomKey).emit('trapButtonLocation', trapButton); 
             
             // send room info to all
             roomInfo = gameRooms[players[socket.id].roomKey];

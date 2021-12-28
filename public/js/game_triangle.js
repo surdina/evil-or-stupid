@@ -236,7 +236,7 @@ class GameScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.scoreText = this.add.text(650, 10, "Score", { fontSize: '24px', fontStyle: 'bold'});
         this.greenScoreText = this.add.text(650, 35, "You:    0", { fontSize: '24px', fill: '#1fc888' });
-        this.redScoreText = this.add.text(650, 60, "Other: 0", { fontSize: '24px', fill: '#FF0000' });
+        this.redScoreText = this.add.text(650, 60, "Other:  0", { fontSize: '24px', fill: '#FF0000' });
         this.infoText = this.add.text(10, 550, "", { fontSize: '16px' });
 
         this.socket.on('scoreUpdateYou', function (points) {
@@ -290,6 +290,22 @@ class GameScene extends Phaser.Scene {
         });
     
      
+        this.socket.on("bothPlayersTrapped", function() {
+            console.log("both players trapped :( :( :(");
+            self.infoText.setText('> Both players trapped! \n> Game will continue in 3 seconds');
+            self.tweens.add({
+                targets: self.trap,
+                alpha: { value: 0.3, duration: 400, ease: 'Power0', loop: 3},
+                yoyo: true,
+                loop: 3,
+            });
+
+            self.time.addEvent({
+                delay: 3000,
+                callback: ()=>{self.trap.destroy()}
+            })
+            
+        });
     
         this.socket.on('playerFreed', function () {
             console.log('all players are freeeeeeeeeeeeeee');
@@ -518,6 +534,7 @@ class Trap extends Phaser.Physics.Arcade.Sprite {
         this.body.setCircle(100);
         this.setCollideWorldBounds(true);
         this.setBounce(1, 1);
+        this.setAlpha(1);
 
 
     }
