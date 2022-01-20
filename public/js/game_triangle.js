@@ -14,6 +14,7 @@ const gameRooms = {
 }
 var gameStarted = 0;
 var gameJoined = 0;
+var gamePaused = false;
 
 
 class Game extends Phaser.Game {
@@ -75,6 +76,7 @@ class MainScene extends Phaser.Scene {
             } else {
                 console.log("requesting up-to-date game state from server");
                 scene.socket.emit("requestCurrentState");
+
             }
         });
 
@@ -94,7 +96,7 @@ class GameScene extends Phaser.Scene {
     init(data) {
         this.socket = data.socket;
         this.roomInfo = data.roomInfo;
-        console.log("Room info: " + this.roomInfo);
+        // console.log("Room info: " + this.roomInfo);
         this.players = data.roomInfo.players;
         this.starLocation = data.roomInfo.star;
         this.trapLocation = data.roomInfo.trap;
@@ -181,9 +183,16 @@ class GameScene extends Phaser.Scene {
             self.otherPlayers.getChildren().forEach(function (otherPlayer) {
                 console.log("other player disconnected");
                 self.infoText.setText('> Game paused \n> [other player disconnected; waiting for new player]');
-                
                 otherPlayer.destroy();
+                console.log("ship paused while waiting for new player");
+                // todo game pause      
+                gamePaused = true;
             });
+
+            // request updated state
+            self.socket.emit("requestCurrentState");
+            
+
         });
 
         this.socket.on('disconnect', function () {
@@ -280,8 +289,6 @@ class GameScene extends Phaser.Scene {
             if (self.trapButton) self.trapButton.destroy();
             self.ship.trapped = false;
     
-    
-            console.log('creating traps ...')
             self.trap = new Trap(self, trapLocation.x, trapLocation.y);   
     
             self.physics.add.overlap(self.ship, self.trap, function () {
@@ -364,7 +371,7 @@ class GameScene extends Phaser.Scene {
 
         // ship movement
 
-        if (this.ship && this.ship.trapped == false) {
+        if (this.ship && this.ship.trapped == false && gamePaused == false) {
     
             if (this.cursors.left.isDown) {
                 this.ship.setAngularVelocity(-150);
@@ -397,7 +404,7 @@ class GameScene extends Phaser.Scene {
                 rotation: this.ship.rotation
             };
     
-        } else if (this.ship && this.ship.trapped == true) {
+        } else if (this.ship && this.ship.trapped == true && gamePaused == false) {
             // make trap absorb player and only allow rotation
             this.physics.moveToObject(this.ship, this.trap, 60, 300);
     
@@ -422,7 +429,7 @@ class GameScene extends Phaser.Scene {
                 y: this.ship.y,
                 rotation: this.ship.rotation
             };
-        }
+        } 
     }
 }
 
@@ -434,7 +441,7 @@ class WaitingScene extends Phaser.Scene {
 
     init(data) {
         this.socket = data.socket;
-        console.log("Starting WaitingScene for socket id: ", this.socket.id);
+        // console.log("Starting WaitingScene for socket id: ", this.socket.id);
     }
 
     create() {
@@ -443,7 +450,10 @@ class WaitingScene extends Phaser.Scene {
         this.add.text(5, 50, 'Waiting for second player to join')
 
         this.socket.on("startGame", function(availableRoomKey){
-            console.log("starting signal received! RoomKey: " + availableRoomKey);
+            console.log("Starting new game in room with roomKey: " + availableRoomKey);
+            gamePaused = false;
+
+
         });
 
 
@@ -454,7 +464,7 @@ class WaitingScene extends Phaser.Scene {
 
 
         this.socket.on("setStartingState", function(roomInfo) {
-            console.log("setStartingState: " + roomInfo);
+            // console.log("setStartingState: " + roomInfo);
             // const { roomKey, players, numPlayers } = roomInfo;
 
             
@@ -465,12 +475,12 @@ class WaitingScene extends Phaser.Scene {
             // this.state.roomKey = roomKey;
             // this.state.players = players;
             if (!scene.scene.isActive("GameScene")) {
-                console.log("game scene is not active; running game scene")
+                console.log("Game scene is not active; running game scene now.")
                 scene.scene.run("GameScene", { socket: scene.socket,
                     roomInfo: roomInfo });
             } 
 
-            console.log(roomInfo);
+            // console.log(roomInfo);
 
         });
     }
@@ -489,7 +499,7 @@ class WelcomeScene extends Phaser.Scene {
 
     init(data) {
         this.socket = data.socket;
-        console.log("Starting WelcomeScene for socket id: ", this.socket.id);
+        // console.log("Starting WelcomeScene for socket id: ", this.socket.id);
     }
 
     create() {
@@ -498,7 +508,7 @@ class WelcomeScene extends Phaser.Scene {
 
 
         this.input.keyboard.on('keydown', function() {
-            console.log("requesting to start gamescene");
+            // console.log("requesting to start gamescene");
             gameStarted = 1;
 
 

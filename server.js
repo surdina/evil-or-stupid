@@ -141,6 +141,8 @@ io.on('connection', function (socket) {
                 // if this player was trapped then trap is no longer active
                 if (players[socket.id].trapped == true) {
                     gameRooms[players[socket.id].roomKey].trapActive = false;
+                    gameRooms[players[socket.id].roomKey].trapButton = {};
+
                 }
 
                 // remove player from room, and inform others in room
