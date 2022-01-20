@@ -250,6 +250,10 @@ io.on('connection', function (socket) {
             gameRooms[players[socket.id].roomKey].trapActive = false;
             gameRooms[players[socket.id].roomKey].trapButton = {};
 
+            players[socket.id].trapped = false;
+            gameRooms[players[socket.id].roomKey].players[socket.id].trapped = players[socket.id].trapped;
+            
+            console.log("free all players:", freeAllPlayers(players[socket.id].roomKey));
     
             console.log("old trap location: ", gameRooms[players[socket.id].roomKey].trap);
             trap = generateLocation();
@@ -369,3 +373,9 @@ function assignRoomKey() {
     return availableRoomKey;
 }
 
+function freeAllPlayers(roomKey) {
+    Object.keys(gameRooms[roomKey].players).forEach(key => {
+        gameRooms[roomKey].players[key].trapped = false;
+    });
+    return gameRooms[roomKey];
+}
