@@ -145,16 +145,14 @@ class GameScene extends Phaser.Scene {
             // do the following only if player was not trapped before
             if (this.ship.trapped == false) {
                 this.socket.emit('playerEntrapment');
-                console.log('player trapped');
+                console.log('This player is now trapped.');
                 activateTrap(self);
             }
         }, null, self);
 
-        console.log("checking if trap is active");
-
         // if joining an existing room with an active trap, show release button
         if (this.trapActive && this.trapButton) {
-            console.log("creating trap button");
+            console.log("trap is active. creating trap button");
             this.trapButton = new TrapButton(this, this.trapButton.x, this.trapButton.y);
             this.physics.add.overlap(this.ship, this.trapButton, function() {
                 this.trapButton.destroy();
@@ -183,6 +181,7 @@ class GameScene extends Phaser.Scene {
             self.otherPlayers.getChildren().forEach(function (otherPlayer) {
                 console.log("other player disconnected");
                 self.infoText.setText('> Game paused \n> [other player disconnected; waiting for new player]');
+                
                 otherPlayer.destroy();
             });
         });
@@ -192,7 +191,7 @@ class GameScene extends Phaser.Scene {
             // otherPlayer.destroy();
             // self.scene.stop("GameScene");
 
-            if (reason === "io server disconnect") {
+            if (reason && reason === "io server disconnect") {
                 // the disconnection was initiated by the server, you need to reconnect manually
                 console.log("connection was ended by the server")
             }
@@ -218,9 +217,22 @@ class GameScene extends Phaser.Scene {
 
                 // TODO HERE 
 
-                // UPDATE ALL COORDINATES ON SCREEN
-                // REMOVE ALL PLAYERS NOT MENTIONED IN PLAYER INFO
+                // UPDATE ALL COORDINATES ON SCREEN 
+                // TODO EMOVE ALL PLAYERS NOT MENTIONED IN PLAYER INFO
             });
+
+            if (
+                self.trap.scene && (
+                    self.trap.x != roomInfo.trap.x || 
+                    self.trap.y != roomInfo.trap.y
+                )
+            ) {
+                self.trap.setPosition(roomInfo.trap.x, roomInfo.trap.y);
+            }
+
+            // update trap coordinates
+            // TODO
+
         });
     
         this.socket.on('playerMoved', function (playerInfo) {
@@ -238,6 +250,8 @@ class GameScene extends Phaser.Scene {
         this.greenScoreText = this.add.text(650, 35, "You:    0", { fontSize: '24px', fill: '#1fc888' });
         this.redScoreText = this.add.text(650, 60, "Other:  0", { fontSize: '24px', fill: '#FF0000' });
         this.infoText = this.add.text(10, 550, "", { fontSize: '16px' });
+        this.oldInfoText = this.add.text(10, 550, "", { fontSize: '16px', fill: '#CCCCCC' });
+
 
         this.socket.on('scoreUpdateYou', function (points) {
             self.greenScoreText.setText('You:    ' + points);
@@ -280,8 +294,10 @@ class GameScene extends Phaser.Scene {
             }, null, self);
         });
         
+
+
         this.socket.on('trapButtonLocation', function (trapButtonLocation) {
-            if (self.trapButton.x) self.trapButton.destroy();
+            if (self.trapButton.scene) {self.trapButton.destroy();}
             self.trapButton = new TrapButton(self, trapButtonLocation.x, trapButtonLocation.y);
             self.physics.add.overlap(self.ship, self.trapButton, function() {
               self.trapButton.destroy();
@@ -291,6 +307,7 @@ class GameScene extends Phaser.Scene {
     
      
         this.socket.on("bothPlayersTrapped", function() {
+
             console.log("both players trapped :( :( :(");
             self.infoText.setText('> Both players trapped! \n> Game will continue in 3 seconds');
             self.tweens.add({
@@ -302,7 +319,17 @@ class GameScene extends Phaser.Scene {
 
             self.time.addEvent({
                 delay: 3000,
-                callback: ()=>{self.trap.destroy()}
+                callback: ()=>{
+                    console.log("delayed event");
+                    console.log("self.trap:", self.trap);
+                    if (self.trap.x) self.trap.destroy();
+                    if (self.trapButton.x) self.trapButton.destroy();
+                    console.log("self.trap:", self.trap);
+                    self.ship.trapped = false;
+                    self.socket.emit("requestNextTrap");
+                    console.log("requesting upcoming trap coordinates");
+                    //self.infoText.setText("");
+                }
             })
             
         });
@@ -331,6 +358,7 @@ class GameScene extends Phaser.Scene {
                 
             }
 
+
         
 
 
@@ -347,7 +375,7 @@ class GameScene extends Phaser.Scene {
             }
     
             if (this.cursors.up.isDown) {
-                this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
+                this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration); 
             } else {
                 this.ship.setAcceleration(0);
             }

@@ -135,11 +135,21 @@ io.on('connection', function (socket) {
         if (players[socket.id]) {
             // emit a message to all players to remove this player
             if (players[socket.id].roomKey) {
+
+
+                // TODO #todonow
+                // if this player was trapped then trap is no longer active
+                if (players[socket.id].trapped == true) {
+                    gameRooms[players[socket.id].roomKey].trapActive = false;
+                }
+
                 // remove player from room, and inform others in room
 
                 socket.broadcast.to(players[socket.id].roomKey).emit('userDisconnect', socket.id);
                 gameRooms[players[socket.id].roomKey].numPlayers -= 1;
                 delete gameRooms[players[socket.id].roomKey].players[socket.id];
+
+                
 
             }
             // remove this player from players object
@@ -185,29 +195,50 @@ io.on('connection', function (socket) {
 
 
         if(players[socket.id]) {
+
+            // this player is now trapped
             players[socket.id].trapped = true;
+            gameRooms[players[socket.id].roomKey].players[socket.id].trapped = players[socket.id].trapped;
 
 
-            // emit a message to all other players about the player that got trapped
-            socket.broadcast.to(players[socket.id].roomKey).emit('playerTrapped', players[socket.id]);
+            // // emit a message to all other players about the player that got trapped
+            // socket.broadcast.to(players[socket.id].roomKey).emit('playerTrapped', players[socket.id]);
+
             // create new button location only if nobody was in the trap before
             if (gameRooms[players[socket.id].roomKey].trapActive == false) {
-               trapButton = generateLocation();
+
+                trapButton = generateLocation();
                 gameRooms[players[socket.id].roomKey].trapButton = trapButton;
+                io.sockets.in(players[socket.id].roomKey).emit("trapButtonLocation", trapButton); 
+
+                // update and send room info to all
                 gameRooms[players[socket.id].roomKey].trapActive = true;
-                io.sockets.in(players[socket.id].roomKey).emit('trapButtonLocation', trapButton); 
+                roomInfo = gameRooms[players[socket.id].roomKey];
+                console.log("sending updateState to room " + players[socket.id].roomKey, roomInfo);
+                io.sockets.in(players[socket.id].roomKey).emit("updateState", roomInfo);
+
             } else {
                 // if someone was in the trap before, both are trapped now 
                 // (TODO: check to make sure)
                 // if yes, 
 
                 io.sockets.in(players[socket.id].roomKey).emit("bothPlayersTrapped"); 
+                
+                // generate location for new trap, but do not send yet
+                // (it only gets sent upon client request, after trap fades out)
+
+                trap = generateLocation();
+                gameRooms[players[socket.id].roomKey].trap = trap;
+                gameRooms[players[socket.id].roomKey].trapActive = false;
+                gameRooms[players[socket.id].roomKey].trapButton = {};
+
+                players[socket.id].trapped = false;
+                gameRooms[players[socket.id].roomKey].players[socket.id].trapped = players[socket.id].trapped;
+
+                console.log("upcoming trap location: ",  gameRooms[players[socket.id].roomKey].trap);
             }
             
-            // send room info to all
-            roomInfo = gameRooms[players[socket.id].roomKey];
-            console.log("sending updateState to room " + players[socket.id].roomKey, roomInfo);
-            io.sockets.in(players[socket.id].roomKey).emit("updateState", roomInfo);
+
 
         }
     });
@@ -218,6 +249,7 @@ io.on('connection', function (socket) {
             socket.broadcast.to(players[socket.id].roomKey).emit('playerFreed');
             gameRooms[players[socket.id].roomKey].trapActive = false;
             gameRooms[players[socket.id].roomKey].trapButton = {};
+
     
             console.log("old trap location: ", gameRooms[players[socket.id].roomKey].trap);
             trap = generateLocation();
@@ -239,12 +271,14 @@ io.on('connection', function (socket) {
 
         // if said game room exists, send room info to player
         // (e.g. if connection was lost client-side)
-        if (gameRooms[players[socket.id]]) {
+        if (gameRooms[players[socket.id].roomKey]) {
 
             roomInfo = gameRooms[players[socket.id].roomKey];
-            io.to(socket.id).emit("updateState", roomInfo);
+//            io.to(socket.id).emit("updateState", roomInfo);
+            console.log("emitting updateState");
+            io.sockets.in(players[socket.id].roomKey).emit("updateState", roomInfo);
         } else {
-            
+            console.log("No gameRoom found for socket.id: ", socket.id);
         }
 
         // if server crashed, everything above (player assignment, rooms) has to be done again
@@ -254,6 +288,26 @@ io.on('connection', function (socket) {
         // io.to(socket.id).emit("updateState", gameRooms[players[socket.id].roomKey]);
     });
 
+
+    socket.on('requestNextTrap', function () {
+
+        if(players[socket.id]) {
+            roomInfo = gameRooms[players[socket.id].roomKey];
+
+            console.log("sending updateState to room " + players[socket.id].roomKey, roomInfo);
+            io.sockets.in(players[socket.id].roomKey).emit("updateState", roomInfo);
+
+    
+            console.log("sending next trap location: ", gameRooms[players[socket.id].roomKey].trap);
+
+            trap = gameRooms[players[socket.id].roomKey].trap;
+            io.to(socket.id).emit("trapLocation", trap);    
+
+        }
+
+        
+    // todo adjust scores
+    });
 
 });
 
