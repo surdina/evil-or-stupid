@@ -1,6 +1,35 @@
 
 require('./config.js');
 
+/* const winston = require('winston');
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    defaultMeta: { service: 'user-service' },
+    transports: [
+      //
+      // - Write all logs with importance level of `error` or less to `error.log`
+      // - Write all logs with importance level of `info` or less to `combined.log`
+      //
+      new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+      new winston.transports.File({ filename: 'logs/combined.log' }),
+    ],
+  }); */
+
+const { createLogger, format, transports } = require('winston');
+const { combine, timestamp, label, prettyPrint } = format;
+
+const logger = createLogger({
+  format: combine(
+    format.timestamp({format:'MM-YY-DD HH:mm:ss'}),
+    prettyPrint()
+  ),
+  transports: [
+      new transports.Console(),
+      new transports.File({ filename: 'logs/combined.log' }),
+      new transports.File({ filename: 'logs/error.log', level: 'error' })
+    ]
+})
 
 const express = require('express');
 const app     = express();
@@ -12,6 +41,7 @@ app.get("/", function (req, res) {
  
 const server = app.listen(8081, function () {
   console.log(`Listening on ${server.address().port}`);
+  logger.info(`Listening on ${server.address().port}`);
 });
 
 const io = require('socket.io')(server, {
@@ -63,6 +93,11 @@ let trapActive = false;
 
 io.on('connection', function (socket) {
     console.log('a user connected');
+    logger.log({
+        level: 'info',
+        message: 'A user connected',
+        socket_id: socket.id
+    });
 
 
     // Menu:
@@ -111,10 +146,18 @@ io.on('connection', function (socket) {
         gameRooms[availableRoomKey].numPlayers += 1;
         gameRooms[availableRoomKey] = roomInfo;
         console.log("roomInfo", roomInfo);
+        logger.info("Player " + socket.id + " is added to room " + availableRoomKey);
+        logger.info("Room " + availableRoomKey + " now has " + gameRooms[availableRoomKey].numPlayers + " players.")
 
         if(roomInfo.numPlayers == 2) {
             io.sockets.in(roomInfo.roomKey).emit("startGame", availableRoomKey);
             console.log("## Sending start signal! \n## Room with roomKey " + availableRoomKey + " is good to go.");
+            logger.log({
+                level: "info",
+                message: "Sending start signal! Room with roomKey " + availableRoomKey + " is good to go.",
+                roomKey: availableRoomKey
+            });
+
             io.sockets.in(roomInfo.roomKey).emit("setStartingState", roomInfo);
              // send players object to players in rooom
             io.sockets.in(roomInfo.roomKey).emit("currentPlayers", players);
@@ -128,6 +171,11 @@ io.on('connection', function (socket) {
 
     socket.on('disconnecting', function() {
         console.log('user with socket id ' + socket.id + ' disconnected');
+        logger.log({
+            level: "info",
+            message: "User disconnected",
+            socket_id: socket.id
+        });
 
         
         // TODO delete traps
@@ -146,6 +194,13 @@ io.on('connection', function (socket) {
                 }
 
                 // remove player from room, and inform others in room
+                logger.log({
+                    level: "info",
+                    message: "Removing user from room",
+                    socket_id: socket.id,
+                    roomKey: players[socket.id].roomKey
+                });
+        
 
                 socket.broadcast.to(players[socket.id].roomKey).emit('userDisconnect', socket.id);
                 gameRooms[players[socket.id].roomKey].numPlayers -= 1;
@@ -217,6 +272,11 @@ io.on('connection', function (socket) {
                 gameRooms[players[socket.id].roomKey].trapActive = true;
                 roomInfo = gameRooms[players[socket.id].roomKey];
                 console.log("sending updateState to room " + players[socket.id].roomKey, roomInfo);
+                logger.log({
+                    level: 'info',
+                    message: 'A user is now trapped in room',
+                    roomKey: players[socket.id].roomKey
+                })
                 io.sockets.in(players[socket.id].roomKey).emit("updateState", roomInfo);
 
             } else {
@@ -225,6 +285,11 @@ io.on('connection', function (socket) {
                 // if yes, 
 
                 io.sockets.in(players[socket.id].roomKey).emit("bothPlayersTrapped"); 
+                logger.log({
+                    level: 'info',
+                    message: 'Both users are now trapped in room',
+                    roomKey: players[socket.id].roomKey
+                })
                 
                 // generate location for new trap, but do not send yet
                 // (it only gets sent upon client request, after trap fades out)
@@ -256,9 +321,22 @@ io.on('connection', function (socket) {
             gameRooms[players[socket.id].roomKey].players[socket.id].trapped = players[socket.id].trapped;
             
             console.log("free all players:", freeAllPlayers(players[socket.id].roomKey));
+            logger.log({
+                level: 'info',
+                message: 'Free all players in room',
+                roomKey: players[socket.id].roomKey
+            })
     
             console.log("old trap location: ", gameRooms[players[socket.id].roomKey].trap);
             trap = generateLocation();
+            logger.log({
+                level: 'info',
+                message: 'Trap moved to new location',
+                oldTrapLocation: gameRooms[players[socket.id].roomKey].trap,
+                newTrapLocation: trap,
+                roomKey: players[socket.id].roomKey
+            })
+            
             gameRooms[players[socket.id].roomKey].trap = trap;
             console.log("new trap location: ",  gameRooms[players[socket.id].roomKey].trap);
             io.sockets.in(players[socket.id].roomKey).emit('trapLocation', trap);
@@ -285,6 +363,11 @@ io.on('connection', function (socket) {
             io.sockets.in(players[socket.id].roomKey).emit("updateState", roomInfo);
         } else {
             console.log("No gameRoom found for socket.id: ", socket.id);
+            logger.log({
+                level: 'info',
+                message: 'No gameRoom found for user with socket.id ' + socket.id,
+                socket_id: socket.id
+            })
         }
 
         // if server crashed, everything above (player assignment, rooms) has to be done again
