@@ -1,21 +1,4 @@
-
 require('./config.js');
-
-/* const winston = require('winston');
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.json(),
-    defaultMeta: { service: 'user-service' },
-    transports: [
-      //
-      // - Write all logs with importance level of `error` or less to `error.log`
-      // - Write all logs with importance level of `info` or less to `combined.log`
-      //
-      new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-      new winston.transports.File({ filename: 'logs/combined.log' }),
-    ],
-  }); */
-
 const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, label, prettyPrint } = format;
 
@@ -26,6 +9,8 @@ const logger = createLogger({
   ),
   transports: [
       new transports.Console(),
+      // - Write all logs with importance level of `error` or less to `error.log`
+      // - Write all logs with importance level of `info` or less to `combined.log`
       new transports.File({ filename: 'logs/combined.log' }),
       new transports.File({ filename: 'logs/error.log', level: 'error' })
     ]
@@ -184,8 +169,6 @@ io.on('connection', function (socket) {
             // emit a message to all players to remove this player
             if (players[socket.id].roomKey) {
 
-
-                // TODO #todonow
                 // if this player was trapped then trap is no longer active
                 if (players[socket.id].trapped == true) {
                     gameRooms[players[socket.id].roomKey].trapActive = false;
