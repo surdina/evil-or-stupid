@@ -538,7 +538,6 @@ class WelcomeScene extends Phaser.Scene {
         if (gameStarted == 1 && gameJoined == 0) {
             this.scene.start("WaitingScene", { socket: this.socket });
         } else if (gameStarted == 0 && tutorialStarted == 1) {
-            // TODO start tutorial
             this.scene.start("TutorialScene", { socket: this.socket });
         }
 
@@ -563,25 +562,24 @@ class TutorialScene extends Phaser.Scene {
         //     points: 0,
         //     pointsOther: 0,
         //     trapped: false,
-        //     roomKey : "tutorial1"
+        //     roomKey : "tutorialPart1"
         // };
 
 
         console.log("Starting TutorialScene for socket id: ", this.socket.id);
     }
 
-
+    // todo make tutorial part that depends on what other player is doing
     create() {
         const self = this;
-        this.add.text(5, 60, 'Tutorial: How to move')
 
 
         const tutorialInfo = {
             "tutorialPart1": {
                 tutorialInstruction: {
-                    1: "Use the left and right arrow keys to turn towards the star.",
-                    2: "Use the up arrow key to move forward, onto the star!",
-                    3: "Collecting stars gives you points.", // todo make points appear
+                    0: "Use the left and right arrow keys to turn towards the star.",
+                    1: "Use the up arrow key to move forward, onto the star!",
+                    2: "Move onto each star to collect it.",
                 },
                 players: {
                     "tutorialPlayer" : {
@@ -596,35 +594,47 @@ class TutorialScene extends Phaser.Scene {
                 roundsPlayed: 0,
                 scores: {},
                 star: {
-                    1: { x: 500, y: 500 },
+                    0: { x: 500, y: 200 },
+                    1: { x: 500, y: 200 },
                     2: { x: 150, y: 200 },
-                    3: { x: 500, y: 200 },
                 },
-                
-                trap: {},
+                trap:  { x: 150, y: 200 },
                 trapActive: false,
                 trapButton: {},
             },
 
             "tutorialPart2": {
                 tutorialInstruction: {
-                    1: "Move towards the star to collect it.",
-                    2: "This is a trap. You cannot move forward while trapped.",
-                    3: "Collect the star without getting trapped."
+                    3: "Stars give you points! Move onto the next star.",
+                    4: "Stars give you points! Move onto the next star.",
+                    5: "This is a trap. You cannot move forward while trapped.",
+                    6: "Collect the star without getting trapped.",
+                    7: "You can deactivate a trap from the outside by moving to the trap button. Try it out!",
                 },
                 roomKey: "tutorialPart2",
                 roomType: "tutorial",
                 roundsPlayed: 0,
                 scores: {},
-                star: {x: 500, y: 500},
-                trap: {x: 500, y: 500},
+                star: {
+                    3: { x: 500, y: 500 },
+                    4: { x: 150, y: 200 },
+                    5: { x: 500, y: 500 },
+                    6: { x: 300, y: 300 },
+                },
+                trap: {
+                    3: { x: 150, y: 200 },
+                    4: { x: 150, y: 200 },
+                    5: { x: 150, y: 200 },
+                    6: { x: 500, y: 500 },
+                },
                 trapActive: false,
                 trapButton: {},
             },
             "tutorialPart3": {
                 tutorialInstruction: {
-                    1: "You can deactivate a trap from the outside by moving to the trap button. Try it out!",
-                    2: "text"
+                    1: "Other players may be on your team (friendly, green), or on the opposite team and playing against you (enemies, red).",
+                    2: "Helping other players on your team gives you points.",
+                    3: "If you collect a star while an enemy player is trapped, you get more points.",
                 },
                 players: {
                     "tutorialPlayer" : {
@@ -672,28 +682,58 @@ class TutorialScene extends Phaser.Scene {
             this.ship.setMaxVelocity(400);
         }
 
-        function makeTutorialStar(i) {
+        function makeTutorialStar(i, star_x, star_y) {
             self.star = self.physics.add.image(
-                tutorialInfo.tutorialPart1.star[i].x, 
-                tutorialInfo.tutorialPart1.star[i].y, 
+                star_x,
+                star_y,
                 'star'
                 );
                 self.physics.add.overlap(self.ship, self.star, function () {
                     // todo
                     if (self.star) self.star.destroy();
-                    self.starsCollected += 1;
+                    self.tutorialStarsCollected += 1;
                     i += 1;
-                    console.log(self.starsCollected + " stars collected!");
-                    if (i <= 3) {
-                        makeTutorialStar(i);
-                    } else {
-                        // todo go to part 2 of tutorial
-                        // (make star inside trap)
+                    console.log(self.tutorialStarsCollected + " stars collected!");
+                    self.tutorialStep = self.tutorialStarsCollected + 1;
+                    if (i <= 2) {
+                        star_x = tutorialInfo.tutorialPart1.star[i].x, 
+                        star_y = tutorialInfo.tutorialPart1.star[i].y, 
+                        makeTutorialStar(i, star_x, star_y);
+                    } else if (i >= 3 & i <= 7) {
+                        self.tutorialInfo.roomKey = "tutorialPart2";
+                        star_x = tutorialInfo.tutorialPart2.star[i].x, 
+                        star_y = tutorialInfo.tutorialPart2.star[i].y, 
+                        makeTutorialStar(i, star_x, star_y);
+                        console.log("going to part2");
+                        self.subtitleText.setText("Tutorial Part 2 of 3: Points and traps");
+                    } else if (i >= 8) {
+                        self.tutorialInfo.roomKey = "tutorialPart3";
+                        console.log("going to part3");
+                        self.subtitleText.setText("Tutorial Part 3 of 3: Other players");
+
                     }
                 }, null, self);
         }
 
-        makeTutorialStar(1);
+        function makeTutorialTrap(i) {
+            if (self.trap) self.trap.destroy();
+            self.ship.trapped = false;    
+            self.trap = new Trap(self, 
+                tutorialInfo.tutorialPart2.trap.x,
+                tutorialInfo.tutorialPart2.trap.y);   
+            self.physics.add.overlap(self.ship, self.trap, function () {
+                if (this.ship.trapped == false) {
+                    console.log('player trapped');
+                    activateTrap(self);
+                }
+            }, null, self);
+        }
+
+        makeTutorialStar(
+            1, 
+            tutorialInfo.tutorialPart1.star[1].x, 
+            tutorialInfo.tutorialPart1.star[1].y,
+            );
         /* 
         this.star = this.physics.add.image(
             tutorialInfo.tutorialPart1.star[1].x, 
@@ -703,9 +743,9 @@ class TutorialScene extends Phaser.Scene {
             self.physics.add.overlap(self.ship, self.star, function () {
                 // todo
                 if (self.star) self.star.destroy();
-                self.starsCollected += 1;
+                self.tutorialStarsCollected += 1;
                 makeTutorialStar(2);
-                console.log(self.starsCollected + " stars collected!");
+                console.log(self.tutorialStarsCollected + " stars collected!");
             }, null, self); */
 
 
@@ -716,22 +756,35 @@ class TutorialScene extends Phaser.Scene {
         });
 
         this.cursors = this.input.keyboard.createCursorKeys();
-        this.tutorialStage = 1;
-        this.starsCollected = 0;
+        this.tutorialStep = 0;
+        this.tutorialStarsCollected = 0;
+
+        this.subtitleText = this.add.text(5, 60, "", { fontSize: '16px' });
 
         this.infoText = this.add.text(10, 570, "", { fontSize: '16px' });
         this.oldInfoText = this.add.text(10, 545, "", { fontSize: '16px', fill: '#555555' });
+        
         this.scoreText = this.add.text(650, 10, "", { fontSize: '24px', fontStyle: 'bold'});
         this.greenScoreText = this.add.text(650, 35, "", { fontSize: '24px', fill: '#1fc888' });
 
-        this.infoText.setText(this.tutorialInfo.tutorialPart1.tutorialInstruction[1]);
+        this.infoText.setText(this.tutorialInfo.tutorialPart1.tutorialInstruction[0]);
+        this.subtitleText.setText("Tutorial Part 1 of 3: How to move");
+
+        console.log(this.infoText.text);
 
   
     }
 
-    update() {        
-
-
+    update() {
+        
+        
+        function addTextLine(self, new_text) {
+            var old_text = self.infoText.text;
+            if (old_text != new_text) {
+                self.oldInfoText.setText(old_text);
+                self.infoText.setText(new_text);
+            }
+        }
 
 
         if (this.ship) {
@@ -745,33 +798,39 @@ class TutorialScene extends Phaser.Scene {
                 this.ship.setAngularVelocity(0);
             }
     
-            if (this.cursors.up.isDown && this.tutorialStage >= 2) {
+            if (this.cursors.up.isDown && this.tutorialStep >= 1) {
                 this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration); 
             } else {
                 this.ship.setAcceleration(0);
             }
     
+            
             // no walls
             //this.physics.world.wrap(this.ship, 5);
-            if (this.tutorialStage == 1 &&
-                this.ship.rotation <= -0.7 &&
-                this.ship.rotation >= -1.3) {
-                    this.tutorialStage = 2;
-                    console.log("setting tutorial stage to 2")
-                } else if (this.tutorialStage == 2) {
+            if (this.tutorialStep == 0 &&
+                this.ship.rotation <= -0.8 &&
+                this.ship.rotation >= -1.2) {
+                    this.tutorialStep = 1;
+                    console.log("Can now move forward");
+                } else if (this.tutorialStep == 1) {
 
-                    this.roomInfo = this.tutorialInfo.tutorial2;
-                    this.oldInfoText.setText(this.tutorialInfo.tutorialPart1.tutorialInstruction[1]);
-                    this.infoText.setText(this.tutorialInfo.tutorialPart1.tutorialInstruction[2]);
-                    
-                } else if (this.tutorialStage == 3) {
+                    addTextLine(this, this.tutorialInfo.tutorialPart1.tutorialInstruction[1]);
+
+                } else if (this.tutorialStep == 2) {
+
+                    addTextLine(this, this.tutorialInfo.tutorialPart1.tutorialInstruction[2]);
+
+                } else if (this.tutorialStep >= 3) {
+
+                    this.roomInfo = this.tutorialInfo.tutorial3;
+
+                    addTextLine(this, this.tutorialInfo.tutorialPart2.tutorialInstruction[this.tutorialStep]);
+
+                    // TODO update instructions more
 
                     this.scoreText.setText("Score");
-                    this.greenScoreText.setText("You:    0")
-                }
-
-
-
+                    this.greenScoreText.setText("You:    " + this.tutorialStarsCollected * 10);
+                } 
 
         }
 
