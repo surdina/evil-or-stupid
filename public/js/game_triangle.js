@@ -15,7 +15,6 @@ const gameRooms = {
 var gameStarted = 0;
 var gameJoined = 0;
 var gamePaused = false;
-var tutorialStarted = 0;
 
 
 class Game extends Phaser.Game {
@@ -25,7 +24,6 @@ class Game extends Phaser.Game {
         // add scenes here
         this.scene.add("MainScene", MainScene);
         this.scene.add("WelcomeScene", WelcomeScene);
-        this.scene.add("TutorialScene", TutorialScene);
         this.scene.add("WaitingScene", WaitingScene);
         this.scene.add("GameScene", GameScene);
 
@@ -229,7 +227,7 @@ class GameScene extends Phaser.Scene {
                 // TODO HERE 
 
                 // UPDATE ALL COORDINATES ON SCREEN 
-                // TODO EMOVE ALL PLAYERS NOT MENTIONED IN PLAYER INFO
+                // TODO REMOVE ALL PLAYERS NOT MENTIONED IN PLAYER INFO
             });
 
             if (
@@ -273,10 +271,9 @@ class GameScene extends Phaser.Scene {
         });
     
         this.socket.on('starLocation', function (starLocation) {
-
+            if (self.star) self.star.destroy();
             self.roomInfo.star.x = starLocation.x;
             self.roomInfo.star.y = starLocation.y;
-            if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
             console.log("star location received!")
             self.physics.add.overlap(self.ship, self.star, function () {
@@ -506,17 +503,10 @@ class WelcomeScene extends Phaser.Scene {
 
     create() {
         const scene = this;
-        this.add.text(5, 60, 'Press T key to start tutorial...')
 
         this.add.text(5, 80, 'Press G key to start game...')
 
 
-
-
-        this.input.keyboard.on('keydown_T', function() {
-            console.log("starting tutorial");
-            tutorialStarted = 1;
-        });
 
 
         this.input.keyboard.on('keydown_G', function() {
@@ -537,244 +527,7 @@ class WelcomeScene extends Phaser.Scene {
     update() {        
         if (gameStarted == 1 && gameJoined == 0) {
             this.scene.start("WaitingScene", { socket: this.socket });
-        } else if (gameStarted == 0 && tutorialStarted == 1) {
-            // TODO start tutorial
-            this.scene.start("TutorialScene", { socket: this.socket });
         }
-
-    }
-}
-
-class TutorialScene extends Phaser.Scene {
-    constructor() {
-        super({key: "TutorialScene"});
-
-    }
-
-    init(data) {
-        this.socket = data.socket;
-
-        // const tutorialInfo = {
-        //     rotation: 0,
-        //     x: Math.floor(Math.random() * 700 / 2) + 50,
-        //     y: Math.floor(Math.random() * 500 / 2) + 50,
-        //     playerId: this.socket.id,
-        //     team: 'green',
-        //     points: 0,
-        //     pointsOther: 0,
-        //     trapped: false,
-        //     roomKey : "tutorial1"
-        // };
-
-
-        console.log("Starting TutorialScene for socket id: ", this.socket.id);
-    }
-
-
-    create() {
-        const self = this;
-        this.add.text(5, 60, 'Tutorial: How to move')
-
-
-        const tutorialInfo = {
-            "tutorialPart1": {
-                tutorialInstruction: {
-                    1: "Use the left and right arrow keys to turn towards the star.",
-                    2: "Use the up arrow key to move forward, onto the star!",
-                    3: "Collecting stars gives you points.", // todo make points appear
-                },
-                players: {
-                    "tutorialPlayer" : {
-                        playerId: "tutorialPlayer",
-                        rotation: 0,
-                        x: 150,
-                        y: 200,
-                    }
-                },
-                roomKey: "tutorialPart1",
-                roomType: "tutorial",
-                roundsPlayed: 0,
-                scores: {},
-                star: {
-                    1: { x: 500, y: 500 },
-                    2: { x: 150, y: 200 },
-                    3: { x: 500, y: 200 },
-                },
-                
-                trap: {},
-                trapActive: false,
-                trapButton: {},
-            },
-
-            "tutorialPart2": {
-                tutorialInstruction: {
-                    1: "Move towards the star to collect it.",
-                    2: "This is a trap. You cannot move forward while trapped.",
-                    3: "Collect the star without getting trapped."
-                },
-                roomKey: "tutorialPart2",
-                roomType: "tutorial",
-                roundsPlayed: 0,
-                scores: {},
-                star: {x: 500, y: 500},
-                trap: {x: 500, y: 500},
-                trapActive: false,
-                trapButton: {},
-            },
-            "tutorialPart3": {
-                tutorialInstruction: {
-                    1: "You can deactivate a trap from the outside by moving to the trap button. Try it out!",
-                    2: "text"
-                },
-                players: {
-                    "tutorialPlayer" : {
-                        playerId: "tutorialPlayer",
-                        rotation: 0,
-                        x: 150,
-                        y: 300,
-                    }
-                },
-                roomKey: "tutorialPart3",
-                roomType: "tutorial",
-                roundsPlayed: 0,
-                scores: {},
-                star: {x: 600, y: 400},
-                trap: {},
-                trapActive: false,
-                trapButton: {},
-            },
-           
-        };
-
-        this.tutorialInfo = tutorialInfo;
-        this.roomInfo = tutorialInfo.tutorialPart1;
-        // console.log("Room info: " + this.roomInfo);
-        this.players = this.roomInfo.players;
-        this.starLocation = this.roomInfo.star;
-        this.trapLocation = this.roomInfo.trap;
-        this.trapButton = this.roomInfo.trapButton;
-        this.trapActive = this.roomInfo.trapActive;
-
-        if (!this.ship) {
-            this.ship = this.physics.add.image(
-                this.roomInfo.players["tutorialPlayer"].x, 
-                this.roomInfo.players["tutorialPlayer"].y, 
-                'ship'
-                ).setOrigin(0.5, 0.5).setDisplaySize(36, 42);
-                this.ship.trapped = false;
-                this.ship.setBounce(1, 1);
-                this.ship.setCollideWorldBounds(true);
-            //self.ship.onWorldBounds=true;
-            // own ship: green
-            this.ship.setTint(0x00ffaa);
-            this.ship.setDrag(50);
-            this.ship.setAngularDrag(50);
-            this.ship.setMaxVelocity(400);
-        }
-
-        function makeTutorialStar(i) {
-            self.star = self.physics.add.image(
-                tutorialInfo.tutorialPart1.star[i].x, 
-                tutorialInfo.tutorialPart1.star[i].y, 
-                'star'
-                );
-                self.physics.add.overlap(self.ship, self.star, function () {
-                    // todo
-                    if (self.star) self.star.destroy();
-                    self.starsCollected += 1;
-                    i += 1;
-                    console.log(self.starsCollected + " stars collected!");
-                    if (i <= 3) {
-                        makeTutorialStar(i);
-                    } else {
-                        // todo go to part 2 of tutorial
-                        // (make star inside trap)
-                    }
-                }, null, self);
-        }
-
-        makeTutorialStar(1);
-        /* 
-        this.star = this.physics.add.image(
-            tutorialInfo.tutorialPart1.star[1].x, 
-            tutorialInfo.tutorialPart1.star[1].y, 
-            'star'
-            );
-            self.physics.add.overlap(self.ship, self.star, function () {
-                // todo
-                if (self.star) self.star.destroy();
-                self.starsCollected += 1;
-                makeTutorialStar(2);
-                console.log(self.starsCollected + " stars collected!");
-            }, null, self); */
-
-
-            
-
-        this.input.keyboard.on('keydown', function() {
-            tutorialStarted = 1;
-        });
-
-        this.cursors = this.input.keyboard.createCursorKeys();
-        this.tutorialStage = 1;
-        this.starsCollected = 0;
-
-        this.infoText = this.add.text(10, 570, "", { fontSize: '16px' });
-        this.oldInfoText = this.add.text(10, 545, "", { fontSize: '16px', fill: '#555555' });
-        this.scoreText = this.add.text(650, 10, "", { fontSize: '24px', fontStyle: 'bold'});
-        this.greenScoreText = this.add.text(650, 35, "", { fontSize: '24px', fill: '#1fc888' });
-
-        this.infoText.setText(this.tutorialInfo.tutorialPart1.tutorialInstruction[1]);
-
-  
-    }
-
-    update() {        
-
-
-
-
-        if (this.ship) {
-    
-            if (this.cursors.left.isDown) {
-                this.ship.setAngularVelocity(-150);
-
-            } else if (this.cursors.right.isDown) {
-                this.ship.setAngularVelocity(150);
-            } else {
-                this.ship.setAngularVelocity(0);
-            }
-    
-            if (this.cursors.up.isDown && this.tutorialStage >= 2) {
-                this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration); 
-            } else {
-                this.ship.setAcceleration(0);
-            }
-    
-            // no walls
-            //this.physics.world.wrap(this.ship, 5);
-            if (this.tutorialStage == 1 &&
-                this.ship.rotation <= -0.7 &&
-                this.ship.rotation >= -1.3) {
-                    this.tutorialStage = 2;
-                    console.log("setting tutorial stage to 2")
-                } else if (this.tutorialStage == 2) {
-
-                    this.roomInfo = this.tutorialInfo.tutorial2;
-                    this.oldInfoText.setText(this.tutorialInfo.tutorialPart1.tutorialInstruction[1]);
-                    this.infoText.setText(this.tutorialInfo.tutorialPart1.tutorialInstruction[2]);
-                    
-                } else if (this.tutorialStage == 3) {
-
-                    this.scoreText.setText("Score");
-                    this.greenScoreText.setText("You:    0")
-                }
-
-
-
-
-        }
-
 
     }
 }
