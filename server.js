@@ -247,7 +247,9 @@ io.on('connection', function (socket) {
             // create new button location only if nobody was in the trap before
             if (gameRooms[players[socket.id].roomKey].trapActive == false) {
 
-                trapButton = generateLocation();
+                // trapButton = generateLocation();
+                // TODO TRY THIS
+                trapButton = generateTrapButtonLocation(gameRooms[players[socket.id].roomKey].trap);
                 gameRooms[players[socket.id].roomKey].trapButton = trapButton;
                 io.sockets.in(players[socket.id].roomKey).emit("trapButtonLocation", trapButton); 
 
@@ -388,6 +390,14 @@ function generateLocation() {
         x: Math.floor(Math.random() * 700) + 50,
         y: Math.floor(Math.random() * 500) + 50
     };
+}
+
+function generateTrapButtonLocation(trap) {
+    trapButtonLocation = generateLocation();
+    while (Math.abs(trapButtonLocation.x - trap.x) < 100 & Math.abs(trapButtonLocation.y - trap.y) < 100) {
+        trapButtonLocation = generateLocation();
+    }
+    return(trapButtonLocation);
 }
 
 function generateString() {
