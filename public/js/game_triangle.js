@@ -256,8 +256,10 @@ class GameScene extends Phaser.Scene {
     
         this.cursors = this.input.keyboard.createCursorKeys();
         this.scoreText = this.add.text(650, 10, "Score", { fontSize: '24px', fontStyle: 'bold'});
-        this.greenScoreText = this.add.text(650, 35, "You:    0", { fontSize: '24px', fill: '#1fc888' });
-        this.redScoreText = this.add.text(650, 60, "Other:  0", { fontSize: '24px', fill: '#FF0000' });
+        this.greenScoreText = this.add.text(650, 35, 
+            "You:    0", { fontSize: '20px', fill: '#1fc888' });
+        this.redScoreText = this.add.text(650, 60, 
+            "Other:  0", { fontSize: '20px', fill: '#FF0000' });
         this.infoText = this.add.text(10, 550, "", { fontSize: '16px' });
         this.oldInfoText = this.add.text(10, 525, "", { fontSize: '16px', fill: '#CCCCCC' });
 
@@ -267,7 +269,7 @@ class GameScene extends Phaser.Scene {
         });
 
         this.socket.on("scoreUpdateOther", function (pointsOther) {
-            self.redScoreText.setText('Other: ' + pointsOther);
+            self.redScoreText.setText('Other:  ' + pointsOther);
         });
     
         this.socket.on('starLocation', function (starLocation) {
@@ -303,6 +305,7 @@ class GameScene extends Phaser.Scene {
 
 
         this.socket.on('trapButtonLocation', function (trapButtonLocation) {
+            console.log("trapButtonLocation received!");
             if (self.trapButton.scene) {self.trapButton.destroy();}
             self.trapButton = new TrapButton(self, trapButtonLocation.x, trapButtonLocation.y);
             self.physics.add.overlap(self.ship, self.trapButton, function() {
