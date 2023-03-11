@@ -15,7 +15,6 @@ const gameRooms = {
 var gameStarted = 0;
 var gameJoined = 0;
 var gamePaused = false;
-var tutorialStarted = 0;
 
 
 class Game extends Phaser.Game {
@@ -25,7 +24,6 @@ class Game extends Phaser.Game {
         // add scenes here
         this.scene.add("MainScene", MainScene);
         this.scene.add("WelcomeScene", WelcomeScene);
-        this.scene.add("TutorialScene", TutorialScene);
         this.scene.add("WaitingScene", WaitingScene);
         this.scene.add("GameScene", GameScene);
 
@@ -229,7 +227,7 @@ class GameScene extends Phaser.Scene {
                 // TODO HERE 
 
                 // UPDATE ALL COORDINATES ON SCREEN 
-                // TODO EMOVE ALL PLAYERS NOT MENTIONED IN PLAYER INFO
+                // TODO REMOVE ALL PLAYERS NOT MENTIONED IN PLAYER INFO
             });
 
             if (
@@ -258,8 +256,10 @@ class GameScene extends Phaser.Scene {
     
         this.cursors = this.input.keyboard.createCursorKeys();
         this.scoreText = this.add.text(650, 10, "Score", { fontSize: '24px', fontStyle: 'bold'});
-        this.greenScoreText = this.add.text(650, 35, "You:    0", { fontSize: '24px', fill: '#1fc888' });
-        this.redScoreText = this.add.text(650, 60, "Other:  0", { fontSize: '24px', fill: '#FF0000' });
+        this.greenScoreText = this.add.text(650, 35, 
+            "You:    0", { fontSize: '20px', fill: '#1fc888' });
+        this.redScoreText = this.add.text(650, 60, 
+            "Other:  0", { fontSize: '20px', fill: '#FF0000' });
         this.infoText = this.add.text(10, 550, "", { fontSize: '16px' });
         this.oldInfoText = this.add.text(10, 525, "", { fontSize: '16px', fill: '#CCCCCC' });
 
@@ -269,14 +269,13 @@ class GameScene extends Phaser.Scene {
         });
 
         this.socket.on("scoreUpdateOther", function (pointsOther) {
-            self.redScoreText.setText('Other: ' + pointsOther);
+            self.redScoreText.setText('Other:  ' + pointsOther);
         });
     
         this.socket.on('starLocation', function (starLocation) {
-
+            if (self.star) self.star.destroy();
             self.roomInfo.star.x = starLocation.x;
             self.roomInfo.star.y = starLocation.y;
-            if (self.star) self.star.destroy();
             self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
             console.log("star location received!")
             self.physics.add.overlap(self.ship, self.star, function () {
@@ -306,6 +305,7 @@ class GameScene extends Phaser.Scene {
 
 
         this.socket.on('trapButtonLocation', function (trapButtonLocation) {
+            console.log("trapButtonLocation received!");
             if (self.trapButton.scene) {self.trapButton.destroy();}
             self.trapButton = new TrapButton(self, trapButtonLocation.x, trapButtonLocation.y);
             self.physics.add.overlap(self.ship, self.trapButton, function() {
@@ -506,17 +506,10 @@ class WelcomeScene extends Phaser.Scene {
 
     create() {
         const scene = this;
-        this.add.text(5, 60, 'Press T key to start tutorial...')
 
         this.add.text(5, 80, 'Press G key to start game...')
 
 
-
-
-        this.input.keyboard.on('keydown_T', function() {
-            console.log("starting tutorial");
-            tutorialStarted = 1;
-        });
 
 
         this.input.keyboard.on('keydown_G', function() {
